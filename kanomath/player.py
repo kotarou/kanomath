@@ -114,8 +114,9 @@ class Player:
 
     def playCard(self, card, zone, **kwargs):
 
-        asInstant = kwargs.get('asInstant', False)
+        asInstant   = kwargs.get('asInstant', False)
         needsRemove = kwargs.get('removeFromZone', False)
+        discard     = kwargs.get('discard', False)
 
         # Remove the card from its previous zone
         # Sometimes we don't need to do this, because we're iterating in a way where a list split makes more sense
@@ -129,12 +130,17 @@ class Player:
             elif(zone == "deck"):
                 self.deck.cards.pop(self.deck.cards.index(card))
         
-        # And put it in the discard
-        # TODO: potions shouldn;t go to discard until their activation
-        self.discard.append(card)
-
         card.play(self, asInstant=asInstant)
+
+        # And put it in the discard
+        # Cards generally should manage this themselves
+        if(discard):
+            self.discard.append(card)
     
+    def activateCard(self, card, zone, **kwargs):
+        card.activate(self)
+        # self.discard.append(card)
+
     def pitchCard(self, card, zone, **kwargs):
         
         needsRemove = kwargs.get('removeFromHand', False)

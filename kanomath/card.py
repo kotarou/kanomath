@@ -85,17 +85,36 @@ class Card:
         if(self.cardName == "Energy Potion"):
             player.epots += 1
         elif(self.cardName == "Potion of Deja Vu"):
+            player.arena.append(self) 
             player.dpots += 1
         elif(self.cardName == "Clarity Potion"):
+            player.arena.append(self) 
             player.cpots += 1
         elif(self.cardName == "Kindle"):
             player.amp += 1
             # We assume all kindles are optimally resolved
             player.draw(1)
 
+        # 
+        if("Potion" in self.cardName):
+            player.arena.append(self) 
+        elif(self.cardName == "Gaze The Ages"):
+            # TODO: Simulate Gaze going back to hand
+            # if(player.gazeActivated) etc
+            player.discard.append(self)
+            pass
+        else:
+            player.discard.append(self)
+
         return
 
-    def onResolve():
+    def activate(self, player):
+
+        if(self.cardName == "Energy Potion"):
+            player.resources += 2
+
+        player.discard.append(self)
+
         return
 
 SetupCards = {
