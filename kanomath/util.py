@@ -1,5 +1,3 @@
-from termcolor import colored
-
 # From https://stackoverflow.com/questions/4578590/python-equivalent-of-filter-getting-two-output-lists-i-e-partition-of-a-list
 def partition(pred, iterable):
     trues = []
