@@ -17,6 +17,8 @@ class Player:
     discard = []
     arsenal = None
 
+    comboExecuted = False
+
     arsenalBlazing = False
     arsenalKindle = True
     playClarity = True
@@ -90,8 +92,22 @@ class Player:
         self.arsenal = None
 
     def simulateOpponentTurn(self):
-        self.assessComboReadiness()
+        if(self.assessComboReadiness()):
+            print("Choosing to combo.")
+            self.combo()
+        elif(self.opponentForces()):
+            print("Opponent has forced combo.")
+            self.combo()
+        else:
+            print("Passing Opponent's turn without issue.")
+
         return
+    
+    def opponentForces(self):
+        return False
+
+    def combo(self):
+        self.comboExecuted = 1
 
     def assessComboReadiness(self):
         cards = self.hand[:]
@@ -105,7 +121,20 @@ class Player:
         totalPitch = handPitch + 2 * self.epots
 
         if("Blazing Aether" in cardNames and "Aether Wildfire" in cardNames and totalPitch > 8):
-            print(f"Player can potentially combo here: Hand(above), Arsenal({self.arsenal.name if self.arsenal else 'None'}), epots({self.epots})")
+            print(f"  Player can potentially combo here")
+            print(f"  Hand: {", ".join(card.name for card in self.hand[:])}")
+            print(f"  Arsenal: {self.arsenal.name if self.arsenal else 'None'}")
+            print(f"  Epots: {self.epots}, Dpots: {self.dpots}, Cpots: {self.cpots}")
+            
+
+            if("Energy Potion" in cardNames):
+                print("  Choosing to wait to play epot out")
+            else:
+                return True
+        
+        return False
+
+
 
 
     def simulatePlayerTurn(self):
