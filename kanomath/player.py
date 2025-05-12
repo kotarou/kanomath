@@ -95,10 +95,6 @@ class Player:
         else:
             return 10
 
-    def clearArsenal(self):
-        self.discard.append(self.arsenal)
-        self.arsenal = None
-
     def simulateOpponentTurn(self):
         self.turnPlayer = "player"
         if(self.assessComboReadiness()):
@@ -311,9 +307,10 @@ class Player:
         if(self.hasSetupInArsenal() and self.ap > 0):
             # While not really needed, lets make sure to play the best arsenal piece we can in case we ever get two somehow
             self.arsenal.sort(key=sortArsenalPlayPriority)
+            card = self.arsenal[-1]
             
-            kprint(f"Choosing to play {self.arsenal[0]} from arsenal.", 1)
-            self.playCard(self.arsenal[0], "arsenal")
+            kprint(f"Choosing to play {card} from arsenal.", 1)
+            self.playCard(card, "arsenal", removeFromZone=True)
 
 
         for card in self.hand:
@@ -366,6 +363,7 @@ class Player:
             if(self.ipEnergyPotions):
                 potions, rest = partition(lambda x : x.cardName == "Energy Potion", cardsToArsenal)
                 cardsToHold.extend(potions)
+                cardsToArsenal = rest
                 # cardsToPitch.extend(rest)
             
             # Potential TODO: add flag and code for IPing for other types of potion, like deja vu
@@ -411,7 +409,9 @@ class Player:
         numKanos = self.resources // 3
         kprint(f"Pitching {cardsToPitch} to Kano {numKanos} times.", 1)
         for i in range(numKanos):
-            self.kano()
+            # Break if a kano fails or we want to leave the top of deck as is
+            if(not self.kano()):
+                break
 
         # Block with blocky cards
         # TODO: this should be the only block that needs to be tweaked for the hand to properly match cardsToHold
@@ -477,10 +477,11 @@ class Player:
     def hasSetupInArsenal(self):
         return any(card.cardName in SetupCards for card in self.arsenal)
 
+    # Return True if we successfully played the top card, False otherwise
     def kano(self):
         if(len(self.deck.cards) == 0):
             kprint("Kanoing revealed the deck is in fact empty.", 2)
-            return
+            return False
         
         topDeck = self.deck.cards[0]
         name = topDeck.cardName
@@ -488,13 +489,14 @@ class Player:
         # Check if its a card that works with kano's ability
         if(topDeck.cardType != "action"):
             kprint(f"Kano bricked on {topDeck}.", 2)
-            return
+            return False
 
         # Otherwise, lets work out what to do with it
         # Potential TODO: play out pressure cards, or spindle
         # Potential TODO: banish extra blazings if we see them too early, or have more (either 2 more in deck, or one in arsenal)
         if(name in ComboCoreCards.keys()):
             kprint(f"Kano reveals {topDeck}. Leaving it on top of deck.", 2)
+            return False
         elif(name in ComboExtensionCards.keys()):
             kprint(f"Kano reveals {topDeck}. Leaving it in banish for now.", 2)
             self.banish.append(topDeck)
@@ -506,7 +508,8 @@ class Player:
             kprint(f"Kano reveals {topDeck}. Leaving it in banish.", 2)
             self.banish.append(topDeck)
             self.deck.cards.pop(0)
-                
+        
+        return True
 
 
 

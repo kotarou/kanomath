@@ -57,7 +57,8 @@ class Card:
             if(role == "setup"):
                 for optcard in optCards:
                     if(optcard.cardName in SetupCards.keys() or optcard.cardName in ComboCoreCards.keys()):
-                        top.append(optcard)
+                        if(optcard.cardType == "action"):
+                            top.append(optcard)
                     else:
                         bottom.append(optcard)
                 # Potions > combo pieces > other
