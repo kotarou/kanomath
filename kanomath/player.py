@@ -18,11 +18,13 @@ class Player:
     arsenal = None
 
     comboExecuted = False
+    tunicCounters = 0
 
     arsenalBlazing = False
     arsenalKindle = True
     playClarity = True
     ipEnergyPotions = True
+    usesTunic = False
     
     comboPriority = [
         "Aether Wildfire",
@@ -87,6 +89,12 @@ class Player:
         else:
             return 50
 
+    def ragsPriority(self, card):
+        if(card.name in self.comboPriority):
+            return self.comboPriority.index(card.name)
+        else:
+            return 10
+
     def clearArsenal(self):
         self.discard.append(self.arsenal)
         self.arsenal = None
@@ -106,8 +114,71 @@ class Player:
     def opponentForces(self):
         return False
 
+    # We're going to make some huge assumptions in this, because otherwise its just too complex to reaosnably write
     def combo(self):
         self.comboExecuted = 1
+        
+        comboHasWildfire = False
+        comboHasBlazing = False
+        ragsACard = False
+
+        comboResources = self.epots * 2
+
+        # If we use tunic, check we can use counters, otherwise gain spellfrie resources
+        if(self.usesTunic and self.tunicCounters == 3):
+            comboResources += 1
+        else:
+            # TODO: Don't blindly assume spellfire when no tunic
+            comboResources += 1
+
+        # We begin by assuming that the card in arsenal will be played at the correct time, and treat it otherwise as a card in hand that costs 1 to play out
+        arsenalName = self.arsenal.name if self.arsenal else ""
+        if(arsenalName in self.comboPriority):
+            comboResources -= 1
+
+        # Now, we need to work out which card in hand is going to be rags'd 
+        potentialRagsPieces = filter(self.hand[:], lambda x : x.name in self.comboPriority)
+        potentialRagsPieces.sort(key=self.ragsPriority)
+
+        # Avoid the case where we rags wildfire after having one in arsenal
+        # TODO: make this work for more than just blazing, when appropriate
+        # TODO: work out how to judge what would be appropriate
+        blazingInHand = False
+        blazingIndex = -1
+        for i in range(len(potentialRagsPieces)):
+            card = potentialRagsPieces[i]
+            if(card.cardName == "Blazing Aether"):
+                blazingInHand = True
+                blazingIndex = i
+                break
+        
+        # In the case where we would wildfire from arsenal and have another in hand, instead rags the blazing
+        # We use the list ordering here just because I may want to manipulate this list later, when deja vu are properly implemented
+        if(blazingInHand and arsenalName == "Aether  Wildfire" and potentialRagsPieces[0].cardName == "Aether Wildfire"):
+            potentialRagsPieces.insert(0, potentialRagsPieces.pop(blazingIndex))
+
+
+        # Tally up pitch cards
+        # need to account for werird hands and rags
+        for card in self.hand:
+            if(not comboHasBlazing and card.cardName == "Blazing Aether"):
+                comboHasBlazing = True
+                ragsACard = True
+            elif(not comboHasWildfire and card.cardName == "Aether Wildfire"):
+                comboHasWildfire = True
+                ragsACard = True
+            else:
+                comboResources += card.pitch
+
+        # Rags 
+        if(ragsACard):
+            self.deck.draw(1)
+
+           
+        
+
+
+
 
     def assessComboReadiness(self):
         cards = self.hand[:]
@@ -142,6 +213,9 @@ class Player:
         # If the payer could feasibly combo given game state, we will have executed it and ended this simulation
         self.turn += 1
         self.ap = 1
+        
+        if(self.usesTunic and self.tunicCounters < 3):
+            self.tunicCounters += 1
 
         print(f"Beginning turn {self.turn}")
 
