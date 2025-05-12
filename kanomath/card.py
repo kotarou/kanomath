@@ -65,8 +65,7 @@ class Card:
                 if(len(top)):
                     top.sort(key=sortKanoSetupPriority)
                 
-                # output += f"(opting top({len(top)}), bottom({len(bottom)})) "
-                kprint(f"Opting with Eye. Top: {top}, Bottom: {bottom}", 2)
+                kprint(f"Opting with Eye. Saw: {optCards}, Top: {top}, Bottom: {bottom}", 2)
                 player.deck.optBack(top, bottom)
 
             if(role == "combo"):
@@ -100,15 +99,15 @@ class Card:
         return
 
 SetupCards = {
-    "Energy Potion": 10,
-    "Potion of Deja Vu": 8,
-    "Clarity Potion": 2
+    "Energy Potion": 2,
+    "Potion of Deja Vu": 4,
+    "Clarity Potion": 10
 }
 
 ComboCoreCards = {
-    "Aether Wildfire": 10,
-    "Blazing Aether": 8,
-    "Kindle": 3,
+    "Aether Wildfire": 1,
+    "Blazing Aether": 4,
+    "Kindle": 6,
 }
 
 ComboExtensionCards = {
@@ -126,17 +125,17 @@ def sortArsenalPlayPriority(card):
 def sortKanoSetupPriority(card):
     name = card.cardName
     if(name in SetupCards.keys()):
-        return 50 + SetupCards[name]
+        return SetupCards[name]
     elif(name in ComboCoreCards.keys()):
-        return 30 + ComboCoreCards[name]
+        return 10 + ComboCoreCards[name]
     return 0
 
 def sortArsenalPriority(card):
     name = card.cardName
     if(name in ComboCoreCards.keys()):
-        return 50 + ComboCoreCards[name]
-    elif(name in ComboExtensionCards.keys()):
-        return 30 + ComboExtensionCards[name]
+        return ComboCoreCards[name]
+    # elif(name in ComboExtensionCards.keys()):
+    #     return 10 + ComboExtensionCards[name]
     elif(name in SetupCards.keys()):
         return 20 + SetupCards[name]   
     return 0

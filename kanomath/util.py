@@ -12,6 +12,6 @@ def partition(pred, iterable):
     return trues, falses
 
 def kprint(text, level = 0):
-    out = "  " * level
+    out = "    " * level
     out += text
     print(out)

@@ -97,6 +97,7 @@ class Deck:
         if(isinstance(top, Card)):
             self.cards.insert(0, top)
         elif(isinstance(top, Sequence)):
+            # We reverse this because it makes the most sense that the first element is the top card
             top.reverse()
             for card in top:
                 self.cards.insert(0, card)
