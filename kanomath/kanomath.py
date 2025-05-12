@@ -4,7 +4,7 @@ from player import Player
 def main():
     player = Player()
 
-    while(len(player.deck.cards) and not player.comboExecuted):
+    while(player.deck.cardsLeft and not player.comboExecuted):
         player.simulatePlayerTurn()
         player.simulateOpponentTurn()
 
