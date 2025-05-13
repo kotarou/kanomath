@@ -23,7 +23,11 @@ class Player:
     amp = 0
 
     deck: Deck
+
     banish  = []
+    # Where banish cards go after losing relevance
+    # We assume a card in banish can be played this turn fir simplicites sake
+    exile   = []
     discard = []
     pitch   = []
     arena   = []
@@ -51,7 +55,7 @@ class Player:
     usesTunic = False
     
     wentFirst = True
-    turnPlayer = ''
+    isOwnTurn = False
     
     def __init__(self):
         self.pitch = 0
@@ -65,7 +69,7 @@ class Player:
         self.dpots = 0
         self.cpots = 0
 
-        self.turnPlayer = "self" if self.wentFirst else "opponent"
+        # self.turnPlayer = "self" if self.wentFirst else "opponent"
 
         self.deck = Deck()
         self.hand = self.deck.draw(4)
@@ -112,7 +116,7 @@ class Player:
         self.cardsPlayedThisturn = 0
         self.wizardNAAPlayedThisturn = 0
         
-        self.turnPlayer = "player"
+        self.isOwnTurn = False
         if(self.assessComboReadiness()):
             print("Choosing to combo.")
             startCombo(self)
@@ -155,8 +159,41 @@ class Player:
             self.discard.append(card)
     
     def activateCard(self, card, zone, **kwargs):
+
+        needsRemove = kwargs.get('removeFromZone', True)
+
+        if isinstance(zone, str):
+            zone = self.strToZone(zone)
+
+        if needsRemove:
+            zone.pop(zone.index(card))
+
         card.activate(self)
-        # self.discard.append(card)
+
+    # Note: this doesn't remove the card from the zone, we just a reference to the card itself
+    def getCardFromZone(self, target: str, zone: str | list[Card]) -> Card:
+        
+        if isinstance(zone, str):
+            zone = self.strToZone(zone)
+
+        # if isinstance(target, str):
+        for card in zone:
+            if card.cardName == target:
+                return card
+        
+        raise Exception(f"Attempted to find {target} in {zone}, but it was missing")
+   
+    def removeCardFromZone(self, target: str | Card, zone: str | list[Card]) -> Card:
+        
+        if isinstance(zone, str):
+            zone = self.strToZone(zone)
+
+        if isinstance(target, str):
+            target = self.getCardFromZone(target, zone)
+
+        # kprint(f"Finding {target} in {zone}")
+
+        return zone.pop(zone.index(target))
 
     def hasCardInZone(self, targetCardName:str, zone: str | list) -> bool:
 
@@ -169,6 +206,20 @@ class Player:
                 return True
         
         return False
+
+    def countCardsInZone(self, targetCardName:str, zone: str | list) -> int:
+
+        count = 0
+
+        if isinstance(zone, str):
+            zone = self.strToZone(zone)
+
+        
+        for card in zone:
+            if card.cardName == targetCardName:
+                count += 1
+        
+        return count
 
     def playNamedCardFromZone(self, targetCardName:str, zone: str | list) -> bool:
 
@@ -200,6 +251,8 @@ class Player:
                 zone = self.discard
             case "pitch":
                 zone = self.pitch
+            case "arena":
+                zone = self.arena
             case _:
                 raise Exception(f"Attempting to check an invalid card zone {zone}")
             
@@ -212,7 +265,7 @@ class Player:
         # Assume we are either setting up, or combing
         # This is a pretty coarse assumption for now
         # TODO: implement pressure, tempo turns, and aether spindle pitch strategies
-        cardRole = "combo" if self.turnPlayer == "opponent" else "setup"
+        cardRole = "combo" if not self.isOwnTurn else "setup"
         
         # Remove the pitched card from hand
         if(needsRemove):
@@ -224,7 +277,6 @@ class Player:
         # Trigger pitch effects for the given card
         card.triggerPitchEffects(self, role=cardRole)
      
-
         # Return resources gained by this sequence
         self.resources += card.pitch
     
@@ -284,13 +336,13 @@ class Player:
     def simulatePlayerTurn(self):
         # Note that because we simulate turns seperately, a player will never enter their turn with potential combo
         # If the payer could feasibly combo given game state, we will have executed it and ended this simulation
-        self.turnPlayer = "player"
         self.turn += 1
         self.ap = 1
         self.resources = 0
         self.pitch = []
         self.cardsPlayedThisturn = 0
         self.wizardNAAPlayedThisturn = 0
+        self.isOwnTur = True
 
 
         # Handle tunic
@@ -435,20 +487,7 @@ class Player:
         self.hand = cardsToHold
 
         self.drawUp()
-
-        # self.turnPlayer = "player"
-        # self.turn += 1
-        self.ap = 0
-        self.resources = 0
-        self.pitch = []
-        
-
-
-        
-
-
-        
-        # We assume any cards that are note
+     
 
             
     def draw(self, num):
@@ -469,18 +508,19 @@ class Player:
         executeCards, keepCards = partition(selectFunc, zone)
 
         for card in executeCards:
-            # We don't support playing cards here, because kindle is a bitch
-            # if(action == "play"):
-            #     self.playCard(card, zone, removeFromZone = False)
+            if(action == "play"):
+                self.playCard(card, zone)
             if(action == "pitch"):
-                self.pitchCard(card, zone, removeFromZone = False)
+                self.pitchCard(card, zone)
             elif(action == "activate"):
-                self.activateCard(card, zone, removeFromZone = False)
+                self.activateCard(card, zone)
 
         zone = keepCards
         
     def hasSetupInArsenal(self):
         return any(card.cardName in SetupCards for card in self.arsenal)
+
+    # def amp(self, amount: int) -> int:
 
     # Return True if we successfully played the top card, False otherwise
     def kano(self):
@@ -533,9 +573,6 @@ def startCombo(player: Player):
     
     kprint("--- Starting to Combo ---")
 
-    # Begin by using energy potions
-    
-
     # Gain resources, either through tunic, or spellfire
     if(player.usesTunic and player.tunicCounters == 3):
         kprint("Activating tunic for 1 resource", 1)
@@ -548,8 +585,9 @@ def startCombo(player: Player):
         player.resources += 1
 
     # Crack Energy Potions
+    numEPots = player.countCardsInZone("Energy Potion", "arena")
     player.iterateCardZone(player.arena, lambda x : x.cardName == "Energy Potion", "activate")
-    kprint(f"Energy Potions activated. Player has {player.resources} [r] available", 1)
+    kprint(f"{numEPots} Energy Potions activated. Player has {player.resources} [r] available", 1)
 
     # Kindle is a special case, and when played, if another kindle is drawn, will autoplay that kindle too
     # We thus can trust that all kindles have resolved and are gone past this
@@ -558,20 +596,89 @@ def startCombo(player: Player):
 
     # Our hand + arsenal consists of two types of cards now: resources, and combo pieces
     # Start by pulling out the combo seed
-    seed = identifyComboSeed(player)
+    seed, seedZone = identifyComboSeed(player)
 
-    # Pitch all blues
+    # While we're not playing the card yet, lets move it out of the way of following analyses
+    player.removeCardFromZone(seed, seedZone)
+
+    if seedZone == "arsenal":
+        player.stormiesUsed = True
+        player.resources -= 1
+
+    kprint(f"Combo seed identified: {seed}, played from {seedZone}.", 1)
+
+
+    # Likewise, lets get the finisher
+    finish, finishZone = identifyComboFinish(player)
+    if finish is not None:
+        player.removeCardFromZone(finish, finishZone)
+
+        if finishZone == "arsenal":
+            player.stormiesUsed = True
+            player.resources -= 1
+
+        kprint(f"Combo finish identified: {finish}, played from {finishZone}.", 1)
+    else: 
+        kprint(f"No combo finish found. Let us pray.", 1)
+
+
+
+    # Pitch all remaining cards
     # TODO: when we use deja vu potions, gaze, or hail mary topdeck with blue overflow / floodgates they need to be kept here
-    player.iterateCardZone(player.hand, lambda x : x.pitch == 3, "pitch")
-    kprint(f"Cards pitched. Player has {player.resources} [r] available", 1)
+
+    statement = f"{len(player.hand)} cards pitched {player.hand}. Player has "
+    player.iterateCardZone(player.hand, lambda x : x.pitch > 0, "pitch")
+    kprint(statement+ f"{player.resources} [r] available", 1)
+
+    if player.amp > 0:
+        kprint(f"Player has amp {player.amp} ready for {seed}.", 1)
 
 
-def identifyComboSeed(player: Player):
+def identifyComboSeed(player: Player) -> tuple[Card, str | list[Card]]:
 
-    # If theres a wildfire, thats our seed
-    # TODO: Extend this for lucky blind kano showing wildfire
-    if player.hasCardInZone("Aether Wildfire", player.arsenal) and not player.stormiesUsed:
-        player.playNamedCardFromZone("Aether Wildfire", player.arsenal)
+    # Prioritise playing anything we banished luckily, then arsenal cards, and finally cards in hand
+    # Note that in special cases of low resources, this may not be correct, and instead we want to ignore arsenal and only use banish and hand cards
+    # TODO: consider that special case
+    zones = ["arsenal", "banish", "hand"]
+    # In the case we're forced to combo, we may not have wilfdire. If so, heres a rough list of cards to play, in order of piroity
+    # TODO: Make this controllable
+    seeds = ["Aether Wildfire", "Aether Flare", "Sonic Boom", "Open the Flood Gates", "Overflow the Aetherwell", "Aether Spindle"]
+
+    for zone in zones:
+        for seed in seeds:
+            if zone == "arsenal" and player.stormiesUsed:
+                continue
+            if player.hasCardInZone(seed, zone):
+                return (player.getCardFromZone(seed, zone), zone)
+    
+    kprint(f"Somewhat direly, we have no combo seed, and instead must die")
+    raise Exception("Death and dishnour upon your family, you've tried to combo without a seed card.")
+
+def identifyComboFinish(player: Player) -> tuple[Card, str | list[Card]]:
+
+    # Prioritise playing anything we banished luckily, then arsenal cards, and finally cards in hand
+    # Note that in special cases of low resources, this may not be correct, and instead we want to ignore arsenal and only use banish and hand cards
+    # TODO: consider that special case
+    zones = ["arsenal", "banish", "hand"]
+    # In the case we're forced to combo, we may not have Blazing Aether. 
+    # TODO: Make this controllable
+    seeds = ["Blazing Aether"]
+
+    # Lesson in Lava is a special case, as it isn't the final spell, but instead one that then finds the real finisher
+    # However, its only useful as a finisher if there are blazings left
+    if player.deck.contains("Blazing Aether"):
+        seeds.append("Lesson in Lava")
+
+    for zone in zones:
+        for seed in seeds:
+            if zone == "arsenal" and player.stormiesUsed:
+                continue
+            if player.hasCardInZone(seed, zone):
+                return (player.getCardFromZone(seed, zone), zone)
+    
+    kprint(f"We don't like not having a finisher, but raw damage might do the trick!")
+    return (None, None)
+    
     
     
 

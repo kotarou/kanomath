@@ -15,7 +15,7 @@ def kprint(text, level = 0):
     print(out)
 
 def flatten(input):
-    if not isinstance(input, (list, tuple)):
+    if isinstance(input, (list, tuple)):
         if len(input) == 1:
             return input[0]
         else:

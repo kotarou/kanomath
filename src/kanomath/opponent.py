@@ -29,11 +29,9 @@ class OpponentAction(ABC):
     def priority(self, opponent):
         return 0
 
-    @abstractmethod
     def precondition(self, opponent):
         return True
     
-    @abstractmethod
     def effect(self, opponent, player):
         # e.g. Anothos: player.TakeDamage(6), opponent.useResources(4)
         # e.g. opponent.arsenal(Card)

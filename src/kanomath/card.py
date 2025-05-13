@@ -1,5 +1,5 @@
 from colored import Fore, Style
-from .util import kprint 
+from .util import kprint, flatten
 # from enum import Enum
 
 # class Color(Enum):
@@ -43,7 +43,7 @@ class Card:
         # TODO: role of setup kano
         # TODO: role of combo
 
-        if(self.cardName == "will of Arcana"):
+        if(self.cardName == "Will of Arcana"):
             player.amp += 1
 
         elif(self.cardName == "Eye of Ophidia"):
@@ -90,10 +90,6 @@ class Card:
         elif(self.cardName == "Clarity Potion"):
             player.arena.append(self) 
             player.cpots += 1
-        elif(self.cardName == "Kindle"):
-            player.amp += 1
-            # We assume all kindles are optimally resolved
-            player.draw(1)
 
         # 
         if("Potion" in self.cardName):
@@ -108,10 +104,10 @@ class Card:
 
 
         if(self.cardName == "Kindle"):
-            player.amp(1)
+            player.amp += 1
             topDeck = flatten(player.deck.draw(1))
             
-            kprint("Playing {self}, amping 1 and drawing {topDeck}", 1)
+            kprint(f"Playing {self}, amping 1, and drawing {topDeck}", 1)
 
             if(topDeck.cardName == "Kindle"):
                 topDeck.play(player, **kwargs)

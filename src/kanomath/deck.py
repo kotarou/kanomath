@@ -31,6 +31,7 @@ class Deck:
             Card("Aether Wildfire", 1, "action"),
             Card("Potion of Deja Vu", 3, "action"),
             Card("Eye of Ophidia", 3, "gem"),
+            Card("Will of Arcana", 3, "gem"),
             Card("Zdp", 3, "action"),
             Card("Zep", 3, "action"),
             Card("Zfp", 3, "action"),
@@ -118,3 +119,15 @@ class Deck:
         
         print(f"Player drew {results}.")
         return results
+    
+
+    def contains(self, target: str | Card) -> bool:
+
+        if isinstance(target, Card):
+            target = target.cardName
+        
+        for card in self.cards:
+            if card.cardName == target:
+                return True
+        
+        return False
