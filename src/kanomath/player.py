@@ -3,6 +3,7 @@ from .opponent import Opponent
 from .card import Card, SetupCards, ComboCoreCards, ComboExtensionCards, sortArsenalPlayPriority, sortSetupPlayPriority, sortArsenalPriority
 from functools import reduce
 from .util import partition, kprint, flatten
+from colored import Fore, Style
 
 # from . import deck
 # from . import card
@@ -516,6 +517,13 @@ class Player:
 
     # def amp(self, amount: int) -> int:
 
+    def activateNodes(self):
+        if(self.resources < 1):
+            raise Exception("Attempting to nodes with 0 resources available.")
+        
+        self.resources -= 1
+        self.amp += 1
+
     # Return True if we successfully played the top card, False otherwise
     def kano(self):
         if(len(self.deck.cards) == 0):
@@ -648,15 +656,15 @@ def startCombo(player: Player):
 
     # Work out the resources situation
     spareResources = player.resources
-    finishReserveRsources = finish.cost
+    finishReserveResources = finish.cost
     # Remove resources for seed
     spareResources -= seed.cost
     # Remove resources for finisher
     if finish.cardName == "Lesson in Lava":
         # Special case where lesson needs to be followed by kano blazing
-        finishReserveRsources += 3
+        finishReserveResources += 3
     
-    spareResources -= finishReserveRsources
+    spareResources -= finishReserveResources
 
     spareResources = kanoExtensions(player, spareResources)
     if spareResources > 0:
@@ -664,18 +672,29 @@ def startCombo(player: Player):
         spareResources -= 1
         player.resources -= 1
         player.amp += 1
+        kprint(f"Crucible used to amp 1.", 2)
     
     kprint(f"Combo ready to go off. Seed: {seed} w/ amp {player.amp}, extensions {player.banish}, finish {finish}, with {spareResources} [r] remaining for nodes activations")
 
-    executeComboPiece(player, seed, "special", False)
+    executeCombo(player, seed, finish, spareResources, finishReserveResources)
+    
+
+
+    
+
+def executeCombo(player, seed, finish, spareResources, finishReserveResources):
+    kprint(f"Player has {player.resources} resources, of which {spareResources} are free, and {finishReserveResources} are reserved for finisher.", 1)
+
+    # Seed is special
+    executeComboPiece(player, seed, "special", spareResources > 0)
     
     # We'll use this to avoid cards we can;t afford
     # For now, nothing spcial in the ordeirng of cards. TODO: later
     idx = 0
-    while len(player.banish):
+    while len(player.banish) > idx:
         card = player.banish[idx]
-        # kprint(f"Looking at {card}")
-        if player.resources - card.cost >= finishReserveRsources:
+        # 
+        if player.resources - card.cost >= finishReserveResources:
             # kprint(f"Playing {card}")
             executeComboPiece(player, card, "banish", False)
         else:
@@ -684,31 +703,33 @@ def startCombo(player: Player):
 
     executeComboPiece(player, finish, "special", False)
 
+
     if len(player.banish):
-        kprint(f"Cards left unplayed in banish: {player.banish}")
+        kprint(f"{Fore.dark_red_1}Cards left unplayed in banish: {player.banish}.{Style.reset}", 1)
+    else:
+        kprint(f"{Fore.green}All possible cards played.{Style.reset}", 1)
+
     if len(player.hand):
-        kprint(f"Cards left unpitched in hand: {player.hand}")
+        kprint(f"{Fore.dark_red_1}Cards left unpitched in hand: {player.hand}.{Style.reset}", 1)
+    else:
+        kprint(f"{Fore.green}All possible cards pitched.{Style.reset}", 1)
+
     if player.resources > 0:
-        kprint(f"Player failed to use resources: {player.resources}")
-    kprint(f"combo dealt: {player.arcaneDamageDealt} damage.")
+        kprint(f"{Fore.dark_red_1}Player failed to use resources: {player.resources}.{Style.reset}", 1)
+    else:
+        kprint(f"{Fore.green}All possible pitch used.{Style.reset}", 1)
+
+    kprint(f"Combo dealt: {player.arcaneDamageDealt} damage.", 1)
 
 
-def executeCombo(player, seed, finish, nodeResources):
 
-    pumpAllDamage = 0
-    pumpNextDamage = player.amp
-
-    if nodeResources > 0:
-        pumpNextDamage += 1
-        player.resources -= 1
-
-def executeComboPiece(player: Player, card: Card, zone: str | list[Card], useNodes: bool):
+def executeComboPiece(player: Player, card: Card, zone: str | list[Card], useNodes: bool):  
+    
     if useNodes:
-        player.resources -= 1
-        player.amp += 1
+        kprint(f"Using nodes for spell below this line", 3)
+        player.activateNodes()
     
     player.playCard(card, zone, targetPlayer = player.opponent)
-
 
 
 
