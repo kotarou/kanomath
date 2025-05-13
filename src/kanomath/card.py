@@ -1,5 +1,5 @@
 from colored import Fore, Style
-from util import partition, kprint
+from . import util 
 # from enum import Enum
 
 # class Color(Enum):
@@ -105,6 +105,20 @@ class Card:
             pass
         else:
             player.discard.append(self)
+
+
+        if(self.cardName == "Kindle"):
+            player.amp(1)
+            topDeck = flatten(player.deck.draw(1))
+            
+            kprint("Playing {self}, amping 1 and drawing {topDeck}", 1)
+
+            if(topDeck.cardName == "Kindle"):
+                topDeck.play(player, **kwargs)
+            else:
+                player.addCardToHand(topDeck)
+
+        player.cardsPlayedThisTurn += 1
 
         return
 

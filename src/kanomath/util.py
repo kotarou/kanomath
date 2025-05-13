@@ -13,3 +13,12 @@ def kprint(text, level = 0):
     out = "    " * level
     out += text
     print(out)
+
+def flatten(input):
+    if not isinstance(input, (list, tuple)):
+        if len(input) == 1:
+            return input[0]
+        else:
+            raise Exception("Attemption to flatten array with incorrect length") 
+    else:
+        return input

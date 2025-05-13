@@ -1,4 +1,4 @@
-from card import Card
+from .card import Card
 # from collections import deque
 from collections.abc import Sequence
 import random
@@ -19,12 +19,14 @@ class Deck:
             Card("Zap", 3, "action"),
             Card("Zbp", 3, "action"),
             Card("Zcp", 3, "action"),
-            Card("Aether Spindle", 1, "action"),
-            Card("Aether Spindle", 1, "action"),
+            # Card("Aether Spindle", 1, "action"),
+            # Card("Aether Spindle", 1, "action"),
             Card("Aether Spindle", 1, "action"),
             Card("Energy Potion", 3, "action"),
             Card("Energy Potion", 3, "action"),
             Card("Energy Potion", 3, "action"),
+            Card("Blazing Aether", 1, "action"),
+            Card("Aether Wildfire", 1, "action"),
             Card("Blazing Aether", 1, "action"),
             Card("Aether Wildfire", 1, "action"),
             Card("Potion of Deja Vu", 3, "action"),
@@ -50,9 +52,9 @@ class Deck:
             Card("Overflow the Aetherwell", 3, "action"),
             Card("Overflow the Aetherwell", 3, "action"),
             Card("Overflow the Aetherwell", 3, "action"),
-            Card("Lesson in Lava", 2, "action"),
-            Card("Lesson in Lava", 2, "action"),
-            Card("Lesson in Lava", 2, "action"),
+            # Card("Lesson in Lava", 2, "action"),
+            # Card("Lesson in Lava", 2, "action"),
+            # Card("Lesson in Lava", 2, "action"),
             # Card("Zpp", 3, "action"),
             # Card("Zqp", 3, "action"),
             # Card("Zrp", 3, "action"),

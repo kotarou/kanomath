@@ -1,3 +1,7 @@
+[project]
+name = "Kanomath"
+version = "0.1"
+
 [tool.ruff] 
 line-length = 100
 ignore = ["D203"]
@@ -6,3 +10,9 @@ show-source = true
 [tool.black] 
 line-length = 100 
 target-version = ['py39'] 
+
+[tool.pytest.ini_options]
+pythonpath = "src"
+addopts = [
+    "--import-mode=importlib",
+]

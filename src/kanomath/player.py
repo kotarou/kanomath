@@ -1,7 +1,13 @@
-from deck import Deck
-from card import Card, SetupCards, ComboCoreCards, ComboExtensionCards, sortArsenalPlayPriority, sortSetupPlayPriority, sortArsenalPriority
+from .deck import Deck
+from .card import Card, SetupCards, ComboCoreCards, ComboExtensionCards, sortArsenalPlayPriority, sortSetupPlayPriority, sortArsenalPriority
 from functools import reduce
-from util import partition, kprint
+from .util import partition, kprint
+
+# from . import deck
+# from . import card
+# from . import util
+
+# from combo import startCombo
 
 class Player:
     pitch: int
@@ -23,10 +29,16 @@ class Player:
     arena   = []
     arsenal = []
 
+    cardsPlayedThisTurn = 0
+    wizardNAAPlayedThisTurn = 0
+
+
     # Cards the player settings have prevented from being sarsenalled when they otherwise would (e.g. blazng)
     skipArsenal = []
 
     comboExecuted = False
+    stormiesUsed = False
+    spellfireUsed = False
     tunicCounters = 0
     resources = 0
 
@@ -96,13 +108,21 @@ class Player:
             return 10
 
     def simulateOpponentTurn(self):
+        
+        self.cardsPlayedThisturn = 0
+        self.wizardNAAPlayedThisturn = 0
+        
         self.turnPlayer = "player"
         if(self.assessComboReadiness()):
             print("Choosing to combo.")
-            self.combo()
+            startCombo(self)
+
+            self.comboExecuted = True
+
         elif(self.opponentForces()):
             print("Opponent has forced combo.")
-            self.combo()
+            # TODO: args
+            startCombo(self)
         else:
             pass
             # print("Passing Opponent's turn without issue.")
@@ -112,23 +132,20 @@ class Player:
     def opponentForces(self):
         return False
 
-    def playCard(self, card, zone, **kwargs):
+    def playCard(self, card: Card, zone: str | list, **kwargs) -> bool:
 
         asInstant   = kwargs.get('asInstant', False)
         needsRemove = kwargs.get('removeFromZone', False)
         discard     = kwargs.get('discard', False)
+        viaStormies = kwargs.get('stormies', False)
+
+        if isinstance(zone, str):
+            zone = self.strToZone(zone)
 
         # Remove the card from its previous zone
         # Sometimes we don't need to do this, because we're iterating in a way where a list split makes more sense
-        if(needsRemove):
-            if(zone == "hand"):
-                self.hand.pop(self.hand.index(card))
-            elif(zone == "banish"):
-                self.banish.pop(self.banish.index(card))
-            elif(zone == "arsenal"):
-                self.arsenal.pop(self.arsenal.index(card))
-            elif(zone == "deck"):
-                self.deck.cards.pop(self.deck.cards.index(card))
+        if needsRemove:
+            zone.pop(zone.index(card))
         
         card.play(self, asInstant=asInstant)
 
@@ -140,6 +157,52 @@ class Player:
     def activateCard(self, card, zone, **kwargs):
         card.activate(self)
         # self.discard.append(card)
+
+    def hasCardInZone(self, targetCardName:str, zone: str | list) -> bool:
+
+        if isinstance(zone, str):
+            zone = self.strToZone(zone)
+
+        
+        for card in zone:
+            if card.cardName == targetCardName:
+                return True
+        
+        return False
+
+    def playNamedCardFromZone(self, targetCardName:str, zone: str | list) -> bool:
+
+        if isinstance(zone, str):
+            zone = self.strToZone(zone)
+
+        for card in zone:
+            if card.cardName == targetCardName:
+                self.playCard(card, zone)
+        
+        return False
+
+
+    def strToZone(self, zoneName: str) -> list[Card]:
+        
+        zone = None
+
+        match zoneName:
+            case "arsenal":
+                zone = self.arsenal
+            case "deck":
+                zone = self.deck.cards
+            case "hand":
+                zone = self.hand
+            case "banish":
+                zone = self.banish
+            case "discard":
+                zone = self.discard
+            case "pitch":
+                zone = self.pitch
+            case _:
+                raise Exception(f"Attempting to check an invalid card zone {zone}")
+            
+        return zone
 
     def pitchCard(self, card, zone, **kwargs):
         
@@ -168,75 +231,8 @@ class Player:
 
         
 
-    # We're going to make some huge assumptions in this, because otherwise its just too complex to reaosnably write
-    def combo(self):
-        self.comboExecuted = 1
-        
-        comboHasWildfire = False
-        comboHasBlazing = False
-        ragsACard = False
-        comboCards = []
-
-        comboResources = 0
-
-        # Begin by using energy potions
-        self.iterateCardZone(self.arena, lambda x : x.cardName == "Energy Potion", "activate")
-
-        # TODO: activate one clarity potion to try find a blue to rags off
-        # Then, attempt to have a good hit underneath to kano into
-        # If we see a top priority red and no blues, we'll kano the red, bottom anything else, then blind the topdeck of clarity again
-        
-
-        # # If we use tunic, check we can use counters, otherwise gain spellfrie resources
-        # if(self.usesTunic and self.tunicCounters == 3):
-        #     comboResources += 1
-        # else:
-        #     # TODO: Don't blindly assume spellfire when no tunic
-        #     comboResources += 1
-
-        # # We begin by assuming that the card in arsenal will be played at the correct time, and treat it otherwise as a card in hand that costs 1 to play out
-        # arsenalName = self.arsenalcardName if self.arsenal else ""
-        # if(arsenalName in self.comboPriority):
-        #     comboResources -= 1
-        #     comboCards.append(self.arsenal)
-
-        # # Now, we need to work out which card in hand is going to be rags'd 
-        # potentialRagsPieces = filter(self.hand[:], lambda x : xcardName in self.comboPriority)
-        # potentialRagsPieces.sort(key=self.ragsPriority)
-
-        # # Avoid the case where we rags wildfire after having one in arsenal
-        # # TODO: make this work for more than just blazing, when appropriate
-        # # TODO: work out how to judge what would be appropriate
-        # blazingInHand = False
-        # blazingIndex = -1
-        # for i in range(len(potentialRagsPieces)):
-        #     card = potentialRagsPieces[i]
-        #     if(card.cardName == "Blazing Aether"):
-        #         blazingInHand = True
-        #         blazingIndex = i
-        #         break
-        
-        # # In the case where we would wildfire from arsenal and have another in hand, instead rags the blazing
-        # # We use the list ordering here just because I may want to manipulate this list later, when deja vu are properly implemented
-        # # TODO: work for any combo piece, not just blazing
-        # if(blazingInHand and arsenalName == "Aether  Wildfire" and potentialRagsPieces[0].cardName == "Aether Wildfire"):
-        #     potentialRagsPieces.insert(0, potentialRagsPieces.pop(blazingIndex))
-        # comboCards.append(potentialRagsPieces.pop())
-
-
-        # # Incredibly rough and ready rags activation
-        # # For early versions, we're going to assume that this card is always used as a resource
-        # # TODO: deja vu interactions
-        # self.hand.append(self.deck.draw(1))
-        
-        # # First pass is to remove the kindles
-        
-        # # Pitch all non-combo pieces
-        # self.iterateCardZone(self.hand, lambda x : x.cardName not in self.comboPriority, "pitch")
-
+    
            
-        
-
 
 
 
@@ -292,7 +288,10 @@ class Player:
         self.ap = 1
         self.resources = 0
         self.pitch = []
-        
+        self.cardsPlayedThisturn = 0
+        self.wizardNAAPlayedThisturn = 0
+
+
         # Handle tunic
         # This is included because in a super fast game, missing tunic is a viable worry to test for
         if(self.usesTunic and self.tunicCounters < 3):
@@ -436,6 +435,11 @@ class Player:
 
         self.drawUp()
 
+        # self.turnPlayer = "player"
+        # self.turn += 1
+        self.ap = 0
+        self.resources = 0
+        self.pitch = []
         
 
 
@@ -447,18 +451,12 @@ class Player:
 
             
     def draw(self, num):
-
         cards = self.deck.draw(num)
-
-        self.hand = self.hand + cards
-
-        # if(num == 1):
-        #     self.hand.append()
-        # elif(num > 1):
-        #     self.hand.extend(self.deck.draw(num))
-        # elif(num == 0):
-            
+        self.hand = self.hand + cards          
     
+    def addCardToHand(self, card):
+        self.hand.append(card)
+
     # Draw up to your intellect, while potentially IPing ouselves with some cards
     def drawUp(self, ip = []):
         self.hand = ip if ip else self.hand
@@ -520,3 +518,120 @@ class Player:
 
 
 
+# Entry point to the combo
+# A kano combo essentially has three phases: seed damage, extensions, finisher
+#   This typically takes the form of aether wildfire -> some stuff -> blazing
+
+# We're going to make some huge assumptions in this. 
+# First, we will assume the player is successfully able to pitch out all cards and resolve all kindles optimally
+# Second, we will assume that the timing of all pitching does not matter, nor does when stormies or crucible enter the stack
+# Finally, we will assume the player does not use waning moon, and never leaves a spell on the stack to play another card
+# This has a few implications: gaze the ages for example is of very limited use as is (TODO) 
+
+def startCombo(player: Player):
+    
+    kprint("--- Starting to Combo ---")
+
+    # Begin by using energy potions
+    
+
+    # Gain resources, either through tunic, or spellfire
+    if(player.usesTunic and player.tunicCounters == 3):
+        kprint("Activating tunic for 1 resource", 1)
+        player.resources += 1
+        player.tunicCounters = 0
+    elif not player.spellfireUsed:
+        kprint("Activating spellfire cloak for 1 [r]", 1)
+        # TODO: Don't blindly assume spellfire when no tunic
+        player.spellfireUsed = True
+        player.resources += 1
+
+    # Crack Energy Potions
+    player.iterateCardZone(player.arena, lambda x : x.cardName == "Energy Potion", "activate")
+    kprint(f"Energy Potions activated. Player has {player.resources} [r] available", 1)
+
+    # Kindle is a special case, and when played, if another kindle is drawn, will autoplay that kindle too
+    # We thus can trust that all kindles have resolved and are gone past this
+    player.iterateCardZone(player.hand, lambda x : x.cardName == "Kindle", "play")
+    player.iterateCardZone(player.arsenal, lambda x : x.cardName == "Kindle", "play")
+
+    # Our hand + arsenal consists of two types of cards now: resources, and combo pieces
+    # Start by pulling out the combo seed
+    seed = identifyComboSeed(player)
+
+    # Pitch all blues
+    # TODO: when we use deja vu potions, gaze, or hail mary topdeck with blue overflow / floodgates they need to be kept here
+    player.iterateCardZone(player.hand, lambda x : x.pitch == 3, "pitch")
+    kprint(f"Cards pitched. Player has {player.resources} [r] available", 1)
+
+
+def identifyComboSeed(player: Player):
+
+    # If theres a wildfire, thats our seed
+    # TODO: Extend this for lucky blind kano showing wildfire
+    if player.hasCardInZone("Aether Wildfire", player.arsenal) and not player.stormiesUsed:
+        player.playNamedCardFromZone("Aether Wildfire", player.arsenal)
+    
+    
+
+
+
+# We're going to make some huge assumptions in this, because otherwise its just too complex to reaosnably write
+    # def combo(self):
+    #     self.comboExecuted = 1
+        
+    #     comboHasWildfire = False
+    #     comboHasBlazing = False
+    #     ragsACard = False
+    #     comboCards = []
+
+    #     comboResources = 0
+
+
+
+        # TODO: activate one clarity potion to try find a blue to rags off
+        # Then, attempt to have a good hit underneath to kano into
+        # If we see a top priority red and no blues, we'll kano the red, bottom anything else, then blind the topdeck of clarity again
+        
+
+
+
+        # # We begin by assuming that the card in arsenal will be played at the correct time, and treat it otherwise as a card in hand that costs 1 to play out
+        # arsenalName = self.arsenalcardName if self.arsenal else ""
+        # if(arsenalName in self.comboPriority):
+        #     comboResources -= 1
+        #     comboCards.append(self.arsenal)
+
+        # # Now, we need to work out which card in hand is going to be rags'd 
+        # potentialRagsPieces = filter(self.hand[:], lambda x : xcardName in self.comboPriority)
+        # potentialRagsPieces.sort(key=self.ragsPriority)
+
+        # # Avoid the case where we rags wildfire after having one in arsenal
+        # # TODO: make this work for more than just blazing, when appropriate
+        # # TODO: work out how to judge what would be appropriate
+        # blazingInHand = False
+        # blazingIndex = -1
+        # for i in range(len(potentialRagsPieces)):
+        #     card = potentialRagsPieces[i]
+        #     if(card.cardName == "Blazing Aether"):
+        #         blazingInHand = True
+        #         blazingIndex = i
+        #         break
+        
+        # # In the case where we would wildfire from arsenal and have another in hand, instead rags the blazing
+        # # We use the list ordering here just because I may want to manipulate this list later, when deja vu are properly implemented
+        # # TODO: work for any combo piece, not just blazing
+        # if(blazingInHand and arsenalName == "Aether  Wildfire" and potentialRagsPieces[0].cardName == "Aether Wildfire"):
+        #     potentialRagsPieces.insert(0, potentialRagsPieces.pop(blazingIndex))
+        # comboCards.append(potentialRagsPieces.pop())
+
+
+        # # Incredibly rough and ready rags activation
+        # # For early versions, we're going to assume that this card is always used as a resource
+        # # TODO: deja vu interactions
+        # self.hand.append(self.deck.draw(1))
+        
+        # # First pass is to remove the kindles
+        
+        # # Pitch all non-combo pieces
+        # self.iterateCardZone(self.hand, lambda x : x.cardName not in self.comboPriority, "pitch")
