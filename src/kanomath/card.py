@@ -160,7 +160,7 @@ class Card:
 
                 if self.cardName == "Aether Wildfire":
                     kprint(f"{self} hit, amping all spells by {damageDealt}", 2)
-                    player.wildfireAmp = damageDealt
+                    player.wildfireAmp += damageDealt
                 elif self.cardName == "Aether Flare":
                     kprint(f"{self} hit, amping the next spell by {damageDealt}", 2)
                     player.amp = damageDealt
@@ -239,9 +239,10 @@ def sortExtensionPlayPriority(card):
     return 10
 
 ComboExtensionCards = {
-    "Aether Wildfire": 1,
-    "Overflow the Aetherwell": 2,
-    "Open the Flood Gates": 3,
-    "Aether Flare": 4,
-    "Sonic Boom": 5
+    "Energy Potion": 1, # aka we need to get those resources back
+    "Aether Wildfire": 2,
+    "Overflow the Aetherwell": 5,
+    "Open the Flood Gates": 6,
+    "Aether Flare": 8,
+    "Sonic Boom": 9
 }
