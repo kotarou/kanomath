@@ -9,6 +9,8 @@ if __name__ == "__main__":
     player: Player = Player()
     opponent: Opponent = Opponent()
 
+    setupGame(player, opponent)
+
     # TODO: Manage first turn of game
 
     while(player.deck.cardsLeft and not player.comboExecuted and player.turn < 20):

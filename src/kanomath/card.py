@@ -16,6 +16,17 @@ class Card:
     cardType: str
     subType: str
 
+    
+    arcaneDamage: int
+
+    @property
+    def doesArcane(self) -> bool:
+        # TODO: blazing aether, scour
+        return self.arcaneDamage > 0
+
+
+
+
     def __str__(self):
         match self.pitch:
             case 0:
@@ -32,10 +43,14 @@ class Card:
     def __repr__(self):
         return self.__str__()
 
-    def __init__(self, name, pitch, cardType="action"):
+    def __init__(self, name, pitch, cost, **kwargs):
+
+        self.cardType       = kwargs.get("cardType", "action")
+        self.arcaneDamage   = kwargs.get("arcane", 0)
+
         self.cardName = name
         self.pitch = pitch
-        self.cardType = cardType
+        self.cost = cost
 
     def triggerPitchEffects(self, player, **kwargs):
         role = kwargs.get('role', False)
@@ -77,7 +92,15 @@ class Card:
         
     def play(self, player, **kwargs):
 
-        asInstant = kwargs.get('asInstant', False)
+        asInstant       = kwargs.get('asInstant', False)
+        targetPlayer    = kwargs.get('targetPlayer', None)
+
+        if(player.resources < self.cost):
+            kprint(f"Cannot pay for {self}'s resource cost ({self.cost}) with {player.resources}")
+            return 
+
+        player.resources -= self.cost
+
 
         if(self.cardType == "action" and not asInstant):
             player.ap -= 1
@@ -114,9 +137,48 @@ class Card:
             else:
                 player.addCardToHand(topDeck)
 
-        player.cardsPlayedThisTurn += 1
+        
 
-        return
+        # Handle arcane damage
+        # Slightly hacky approach, but this lets us determine blazing damage 
+        arcaneToDeal = self.arcaneDamage
+        dealsArcane = self.doesArcane
+        # kprint(f"Target of {self} is {targetPlayer}")
+        if targetPlayer is not None:
+
+            if self.cardName == "Blazing Aether" and player.arcaneDamageDealt > 0:
+                dealsArcane = True
+                arcaneToDeal = player.arcaneDamageDealt
+
+            if dealsArcane:
+                arcaneToDeal = arcaneToDeal + player.amp + player.wildfireAmp
+                player.amp = 0
+
+                targetPlayer.registerDamage(arcaneToDeal, self)
+
+                damageDealt =  targetPlayer.lastHit
+
+                if self.cardName == "Aether Wildfire":
+                    kprint(f"{self} hit, amping all spells by {damageDealt}", 2)
+                    player.wildfireAmp = damageDealt
+                elif self.cardName == "Aether Flare":
+                    kprint(f"{self} hit, amping the next spell by {damageDealt}", 2)
+                    player.amp = damageDealt
+                elif self.cardName == "Overflow the Aetherwell":
+                    kprint(f"{self} hit for {damageDealt}. Surge gain 2 [r].", 2)
+                    if damageDealt > self.arcaneDamage:
+                        player.resources += 2
+                elif self.cardName == "Open the Flood Gates":
+                    kprint(f"{self} hit for {damageDealt}. Surge draw 2 cards", 2)
+                    if damageDealt > self.arcaneDamage:
+                        player.draw(2)
+                else:
+                    kprint(f"{self} dealt {damageDealt} damage.", 2)
+
+                player.arcaneDamageDealt += damageDealt
+
+        player.cardsPlayedThisTurn += 1
+        return 
 
     def activate(self, player):
 

@@ -1,9 +1,22 @@
 from abc import ABC # i.e. Abstract Base Class
+from .util import kprint
+from .card import Card
 
 class Opponent:
 
+    health = 40
+    lastHit = 0
+
     def __init__(self):
         pass
+
+    def registerDamage(self, damage:int, source: Card):
+
+        # kprint(f"Opponent took {damage} damage from {source}", 2)
+
+        self.lastHit = damage
+        self.health -= damage
+
 
     # Opponents have:
     #   a class (guardian, aggor ninja, assassin)
