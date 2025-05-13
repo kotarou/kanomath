@@ -42,6 +42,7 @@ class Player:
 
     opponent: Opponent = None
 
+    readyToCombo = False
 
     # Cards the player settings have prevented from being sarsenalled when they otherwise would (e.g. blazng)
     skipArsenal = []
@@ -285,6 +286,10 @@ class Player:
         self.resources += card.pitch
     
     def assessComboReadiness(self):
+
+        if self.readyToCombo:
+            return True
+
         # kprint("Assessing combo readiness skipped")
         cards = self.hand[:]
 
@@ -410,7 +415,7 @@ class Player:
             self.arsenal.append(card)
             kprint(f"Choosing to arsenal {card}.", 1)
         
-        # At this point we have some cards we'd like to arsenal, some cards we'd ike to blockm with, and some cards we'd like to pitch
+        # At this point we have some cards we'd like to arsenal, some cards we'd ike to block with, and some cards we'd like to pitch
         # If we've set the flag to IP on energy poitions, hold it
         if(len(cardsToArsenal)):
             if(self.ipEnergyPotions):
@@ -423,7 +428,23 @@ class Player:
 
             # Hold core cards
             hold, donthold = partition(lambda x : x.cardName in ComboCoreCards, cardsToArsenal)
-            cardsToHold.extend(hold)
+
+            # Only hold a card if we don't already have it in hand or arsenal
+            for card in hold:
+                allow = True
+                if "potion" not in card.cardName:
+                    for cardH in cardsToHold:
+                        if card.cardName == cardH.cardName:
+                            allow = False
+                            break 
+                    for cardA in self.arsenal:
+                        if card.cardName == cardA.cardName:
+                            allow = False
+                            break 
+                if allow:
+                    cardsToHold.append(card)
+                else:
+                    donthold.append(card)
 
             # Potential TODO: add flag and code for IPing for non core combo cards
 
@@ -476,6 +497,9 @@ class Player:
 
         if(len(cardsToHold)):
             kprint(f"Holding {cardsToHold} for next turn.", 1)
+
+            if len(cardsToHold) == 4:
+                self.readyToCombo = True
         
         # kprint(f"Hand ({len(self.hand)}), Hold ({len(cardsToHold)})")
         # This ideally won;t be needed, need to check everything else works
@@ -719,7 +743,7 @@ def executeCombo(player, seed, finish, spareResources, finishReserveResources):
     else:
         kprint(f"{Fore.green}All possible pitch used.{Style.reset}", 1)
 
-    kprint(f"Combo dealt: {player.arcaneDamageDealt} damage.", 1)
+    kprint(f"Combo dealt {player.arcaneDamageDealt} damage on turn {player.turn}.", 1)
 
 
 
