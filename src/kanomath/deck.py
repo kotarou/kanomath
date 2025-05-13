@@ -1,4 +1,5 @@
 from .card import Card
+from .util import kprint
 # from collections import deque
 from collections.abc import Sequence
 import random
@@ -16,9 +17,9 @@ class Deck:
     def __init__(self):
         
         self.cards = [
-            Card("Aether Spindle", 1, 2, arcane = 4),
-            Card("Aether Spindle", 1, 2, arcane = 4),
-            Card("Aether Spindle", 1, 0, arcane = 4),
+            # Card("Aether Spindle", 1, 2, arcane = 4),
+            # Card("Aether Spindle", 1, 2, arcane = 4),
+            # Card("Aether Spindle", 1, 0, arcane = 4),
             Card("Aether Wildfire", 1, 2, arcane = 4),  
             Card("Aether Wildfire", 1, 2, arcane = 4),
             Card("Aether Wildfire", 1, 2, arcane = 4),
@@ -43,9 +44,9 @@ class Deck:
             Card("Destructive Aethertide", 3, 0, arcane = 1),
             Card("Destructive Aethertide", 3, 0, arcane = 1),
             Card("Destructive Aethertide", 3, 0, arcane = 1),
-            Card("Energy Potion", 3, 0),
-            Card("Energy Potion", 3, 0),
-            Card("Energy Potion", 3, 0),
+            Card("Energy Potion", 3, 0, cardClass = "generic"),
+            Card("Energy Potion", 3, 0, cardClass = "generic"),
+            Card("Energy Potion", 3, 0, cardClass = "generic"),
             Card("Eye of Ophidia", 3, 0, cardType = "gem"),
             Card("Gaze the Ages", 3, 0),
             Card("Gaze the Ages", 3, 0),
@@ -59,8 +60,8 @@ class Deck:
             Card("Pop the Bubble", 3, 0, arcane = 1),
             Card("Pop the Bubble", 3, 0, arcane = 1),
             Card("Pop the Bubble", 3, 0, arcane = 1),
-            Card("Potion of Deja Vu", 3, 0),
-            Card("Potion of Deja Vu", 3, 0),
+            Card("Potion of Deja Vu", 3, 0, cardClass = "generic"),
+            Card("Potion of Deja Vu", 3, 0, cardClass = "generic"),
             Card("Prognosticate", 3, 0, arcane = 1),
             Card("Prognosticate", 3, 0, arcane = 1),
             # Card("Prognosticate", 3, 0, arcane = 1),
@@ -136,7 +137,7 @@ class Deck:
         actualDraws = min(len(self.cards), drawNum)
         results, self.cards = self.cards[:actualDraws], self.cards[actualDraws:]
         
-        print(f"Player drew {results}.")
+        kprint(f"Player drew {results}.", 3)
         return results
     
 

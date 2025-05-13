@@ -82,6 +82,8 @@ class Player:
         self.dpots = 0
         self.cpots = 0
 
+        self.wizardNAAPlayedThisTurn = 0
+
         # self.turnPlayer = "self" if self.wentFirst else "opponent"
 
         self.deck = Deck()
@@ -305,6 +307,10 @@ class Player:
      
         # Return resources gained by this sequence
         self.resources += card.pitch
+        # This is also a quick and firty hack for mid combo pitching
+        self.comboResourcesSpare += card.pitch
+
+        kprint(f"Pitching {card} for {card.pitch} resources.", 3)
     
     def assessComboReadiness(self):
 
@@ -571,6 +577,7 @@ class Player:
             raise Exception("Attempting to nodes with 0 resources available.")
         
         self.resources -= 1
+        self.comboResourcesSpare -= 1
         self.amp += 1
 
     # Return True if we successfully played the top card, False otherwise
@@ -611,7 +618,7 @@ class Player:
     def kano2(self) -> Card | None:
 
         if(self.resources < 3):
-            raise Exception("Attempted to kano with insufficient resources")
+            raise Exception(f"Attempted to kano with insufficient resources ({self.resources})")
         self.resources -= 3
         self.comboResourcesSpare -= 3
 
@@ -629,6 +636,7 @@ class Player:
 
 
         self.banish.append(topDeck)
+        kprint(f"Kano hit {topDeck}", 3)
         return topDeck
 
 
@@ -677,14 +685,15 @@ def startCombo(player: Player):
 
     # Extremely quick and dirty rags implementation
     if seedZone == "arsenal":
-        kprint(f"{seed} played from {seedZone} via stormies.", 1)
         player.stormiesUsed = True
         player.resources -= 1
+        kprint(f"{seed} played from {seedZone} via stormies. {player.resources} [r] remaining.", 1)
+
     elif seedZone == "hand":
-        kprint(f"{seed} played from {seedZone} via rags.", 1)
         player.ragsUsed = True
         player.draw(1)
         player.resources -= 3
+        kprint(f"{seed} played from {seedZone} via rags. {player.resources} [r] remaining.", 1)
 
     # kprint(f"Combo seed identified: {seed}, played from {seedZone}.", 1)
 
@@ -700,14 +709,16 @@ def startCombo(player: Player):
 
         elif finishZone == "hand":
             if not player.ragsUsed:
-                kprint(f"{finish} played from {finishZone} via rags.", 1)
                 player.ragsUsed = True
                 player.draw(1)
                 player.resources -= 3
+                kprint(f"{finish} played from {finishZone} via rags. {player.resources} [r] remaining.", 1)
+
             elif not player.stormiesUsed:
-                kprint(f"{finish} played from {finishZone} via stormies.", 1)
                 player.stormiesUsed = True
                 player.resources -= 1
+                kprint(f"{finish} played from {finishZone} via stormies. {player.resources} [r] remaining.", 1)
+
             else:
                 raise Exception("Oh fuck stormies and rags are gone what do we do???")
         # kprint(f"Combo finish identified: {finish}, played from {finishZone}.", 1)
@@ -718,9 +729,9 @@ def startCombo(player: Player):
     # Pitch all remaining cards
     # TODO: when we use deja vu potions, gaze, or hail mary topdeck with blue overflow / floodgates they need to be kept here
 
-    statement = f"{len(player.hand)} cards pitched {player.hand}. Player has "
+    # statement = f"{len(player.hand)} cards pitched {player.hand}. Player has "
     player.iterateCardZone(player.hand, lambda x : x.pitch > 0, "pitch")
-    kprint(statement+ f"{player.resources} [r] available", 1)
+    # kprint(statement+ f"{player.resources} [r] available", 1)
 
     if player.amp > 0:
         kprint(f"Player has amp {player.amp} ready for {seed}.", 1)
@@ -762,9 +773,17 @@ def executeCombo(player: Player, seed, finish):
     # extensionSortOrder = ["Aether Wildfire", "Overflow the Atherwell", "Open the Flood Gates", "Sonic Boom"]
     player.banish.sort(key=sortExtensionPlayPriority)
     extraBlazings = player.removeAllCopiesFromZone("Blazing Aether", "banish")
+    epots = player.removeAllCopiesFromZone("Energy Potion", "banish")
 
+    if len(epots):
+        for card in epots:
+            executeComboPiece(player, card, "special", False)
+
+    wildfireNodes = False
+    if player.comboResourcesSpare > 0:
+        wildfireNodes = True
     # Seed is special
-    executeComboPiece(player, seed, "special", False)
+    executeComboPiece(player, seed, "special", wildfireNodes)
 
 
     # We'll use this to avoid cards we can;t afford
@@ -779,16 +798,20 @@ def executeCombo(player: Player, seed, finish):
             
             tempR = player.comboResourcesSpare
 
-            executeComboPiece(player, card, "banish", False)
-        
+            executeComboPiece(player, card, "banish", shouldUseNodes(player, card))
         
             if len(player.hand):
                 player.iterateCardZone(player.hand, lambda x : x.cardName == "Kindle", "play")
+
+                # kprint(f"Pitching {player.hand}.", 3)
+
                 player.iterateCardZone(player.hand, lambda x : x.pitch > 0, "pitch")
 
             # Kano if we didn't brick on the last kano, and we have spare resources, and we're not skipping the first card
-            if not player.kanoIsBrick and player.comboResourcesSpare >= 3 and idx == 0:
+            if not player.kanoIsBrick and player.comboResourcesSpare >= 3 and player.resources >= 3 and idx == 0:
+                # kprint(f"Not sure I should kano here, but idx issues huh. resources spare: {player.comboResourcesSpare}, idx: {idx}")
                 player.kano2()
+                player.banish.sort(key=sortExtensionPlayPriority)
 
             # If we gained reosurces, we might be able to play a card we skipped over, so reset idx
             newR = player.comboResourcesSpare
@@ -799,13 +822,12 @@ def executeCombo(player: Player, seed, finish):
             # We can't play this card, so lets go to the next
             idx += 1
 
-        
 
     if len(extraBlazings):
         for card in extraBlazings:
-            executeComboPiece(player, card, "special", False)
+            executeComboPiece(player, card, "special", shouldUseNodes(player, card))
 
-    executeComboPiece(player, finish, "special", False)
+    executeComboPiece(player, finish, "special", shouldUseNodes(player, finish))
 
 
     if len(player.banish):
@@ -826,14 +848,45 @@ def executeCombo(player: Player, seed, finish):
     kprint(f"Combo dealt {player.arcaneDamageDealt} damage on turn {player.turn}.", 1)
 
 
+def shouldUseNodes(player: Player, card: Card) -> bool:
+
+    if player.comboResourcesSpare < 1:
+        return False
+
+    if not card.doesArcane:
+        if card.cardName == "Blazing Aether" and player.arcaneDamageDealt > 0:
+            pass
+        else:
+            return False
+
+    if player.comboResourcesSpare > 3 and not player.kanoIsBrick:
+        return True
+    
+    if card.cardName == "Aether Wildfire":
+        return True
+
+    if player.hasCardInZone("Overflow the Aetherwell", "banish") or player.hasCardInZone("Open the Flood Gates", "banish"):
+        return False
+    
+    return True
+    
+
+
+
 
 def executeComboPiece(player: Player, card: Card, zone: str | list[Card], useNodes: bool):  
     
-    if useNodes:
-        kprint(f"Using nodes for spell below this line", 3)
+    oldRes = player.resources - card.cost
+
+    kprint(f"Playing ({card.cardClass[:1]}) {card}, resources {player.resources} -> {oldRes}.", 2)
+   
+    if useNodes and player.resources > 0:
         player.activateNodes()
 
     player.playCard(card, zone, targetPlayer = player.opponent)
+
+    if useNodes:
+        kprint(f"Nodes was activated, resources {oldRes} -> {player.resources}", 4)
 
     if card.cardName == "Energy Potion":
         player.activateCard(card, "arena")

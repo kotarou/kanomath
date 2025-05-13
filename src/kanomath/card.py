@@ -15,6 +15,7 @@ class Card:
 
     cardType: str
     subType: str
+    cardClass: str = "wizard"
 
     
     arcaneDamage: int
@@ -47,10 +48,12 @@ class Card:
 
         self.cardType       = kwargs.get("cardType", "action")
         self.arcaneDamage   = kwargs.get("arcane", 0)
+        self.cardClass      = kwargs.get("cardClass", "wizard")
 
         self.cardName = name
         self.pitch = pitch
         self.cost = cost
+         
 
     def triggerPitchEffects(self, player, **kwargs):
         role = kwargs.get('role', False)
@@ -114,16 +117,23 @@ class Card:
             player.arena.append(self) 
             player.cpots += 1
 
-        # 
-        if("Potion" in self.cardName):
+        
+        # kprint(f"wizard NAA: {player.wizardNAAPlayedThisTurn}")
+
+
+        if self.cardName == "Gaze the Ages" and player.wizardNAAPlayedThisTurn > 0:
+            # TODO: opt 2
+            kprint(f"Resolving {self} back to hand.", 3)
+            player.hand.append(self)
+            # kprint(f"player hand: {player.hand}.", 3)
+
+        elif "Potion" in self.cardName:
             player.arena.append(self) 
-        elif(self.cardName == "Gaze The Ages"):
-            # TODO: Simulate Gaze going back to hand
-            # if(player.gazeActivated) etc
-            player.discard.append(self)
-            pass
+            
         else:
             player.discard.append(self)
+
+    
 
 
         if(self.cardName == "Kindle"):
@@ -136,8 +146,6 @@ class Card:
                 topDeck.play(player, **kwargs)
             else:
                 player.addCardToHand(topDeck)
-
-        
 
         # Handle arcane damage
         # Slightly hacky approach, but this lets us determine blazing damage 
@@ -159,33 +167,39 @@ class Card:
                 damageDealt =  targetPlayer.lastHit
 
                 if self.cardName == "Aether Wildfire":
-                    kprint(f"{self} hit, amping all spells by {damageDealt}", 2)
+                    kprint(f"{self} hit, amping all spells by {damageDealt}", 3)
                     player.wildfireAmp += damageDealt
                 elif self.cardName == "Aether Flare":
-                    kprint(f"{self} hit, amping the next spell by {damageDealt}", 2)
+                    kprint(f"{self} hit, amping the next spell by {damageDealt}", 3)
                     player.amp = damageDealt
                 elif self.cardName == "Overflow the Aetherwell":
-                    kprint(f"{self} hit for {damageDealt}. Surge gain 2 [r].", 2)
+                    kprint(f"{self} hit for {damageDealt}. Surge gain 2 [r].", 3)
                     if damageDealt > self.arcaneDamage:
                         # cheeky bit of a hack, but it works 
                         player.comboResourcesSpare += 2
                         player.resources += 2
                 elif self.cardName == "Open the Flood Gates":
-                    kprint(f"{self} hit for {damageDealt}. Surge draw 2 cards", 2)
+                    kprint(f"{self} hit for {damageDealt}. Surge draw 2 cards", 3)
                     if damageDealt > self.arcaneDamage:
                         player.draw(2)
                 else:
-                    kprint(f"{self} dealt {damageDealt} damage.", 2)
+                    kprint(f"{self} dealt {damageDealt} damage.", 3)
 
                 player.arcaneDamageDealt += damageDealt
 
         player.cardsPlayedThisTurn += 1
+        
+        if self.cardType == "action" and self.cardClass == "wizard":
+            player.wizardNAAPlayedThisTurn += 1
+        
         return 
 
     def activate(self, player):
 
         if(self.cardName == "Energy Potion"):
             player.resources += 2
+            # Lots of these dirty hacks
+            player.comboResourcesSpare +=2 
 
         player.discard.append(self)
 
@@ -244,5 +258,7 @@ ComboExtensionCards = {
     "Overflow the Aetherwell": 5,
     "Open the Flood Gates": 6,
     "Aether Flare": 8,
-    "Sonic Boom": 9
+    "Sonic Boom": 9,
+    "Gaze the Ages": 15, # just gotta be after other cards
+    "Blazing Aether": 100 # must be last
 }
