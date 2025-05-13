@@ -8,6 +8,9 @@ def cleanUpTurn(player: Player, opponent: Opponent):
     
     # Clean up resources
     player.resources = 0
+    player.comboResourcesAllocated = 0
+    player.comboResourcesSpare = 0
+    
     player.ap = 0
     player.amp = 0
     player.wildfireAmp = 0

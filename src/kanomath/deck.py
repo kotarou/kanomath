@@ -63,10 +63,10 @@ class Deck:
             Card("Potion of Deja Vu", 3, 0),
             Card("Prognosticate", 3, 0, arcane = 1),
             Card("Prognosticate", 3, 0, arcane = 1),
-            Card("Prognosticate", 3, 0, arcane = 1),
-            Card("Sap", 3, 0, arcane = 1),
-            Card("Sap", 3, 0, arcane = 1),
-            Card("Sap", 3, 0, arcane = 1),
+            # Card("Prognosticate", 3, 0, arcane = 1),
+            # Card("Sap", 3, 0, arcane = 1),
+            # Card("Sap", 3, 0, arcane = 1),
+            # Card("Sap", 3, 0, arcane = 1),
             Card("Will of Arcana", 3, 0, cardType = "gem"),
             
             Card("Kindle", 1, 0, cardType = "instant"),
@@ -75,12 +75,17 @@ class Deck:
             Card("Aether Flare", 1, 1, arcane = 3),
             Card("Aether Flare", 1, 1, arcane = 3),
             Card("Aether Flare", 1, 1, arcane = 3),
-            Card("Swell Tidings", 1, 2, arcane = 5),
-            Card("Swell Tidings", 1, 2, arcane = 5),
 
-            # Card("Kindle", 1, "instant"),
-            # Card("Kindle", 1, "instant"),
+            Card("Open the Flood Gates", 2, 2, arcane = 2),
+            Card("Open the Flood Gates", 2, 2, arcane = 2),
+            Card("Open the Flood Gates", 2, 2, arcane = 2),
 
+            Card("Open the Flood Gates", 1, 2, arcane = 3),
+            Card("Open the Flood Gates", 1, 2, arcane = 3),
+            Card("Open the Flood Gates", 1, 2, arcane = 3),
+           
+            # Card("Swell Tidings", 1, 2, arcane = 5),
+            # Card("Swell Tidings", 1, 2, arcane = 5),
         ] 
 
         self.deckSize = len(self.cards)

@@ -167,6 +167,8 @@ class Card:
                 elif self.cardName == "Overflow the Aetherwell":
                     kprint(f"{self} hit for {damageDealt}. Surge gain 2 [r].", 2)
                     if damageDealt > self.arcaneDamage:
+                        # cheeky bit of a hack, but it works 
+                        player.comboResourcesSpare += 2
                         player.resources += 2
                 elif self.cardName == "Open the Flood Gates":
                     kprint(f"{self} hit for {damageDealt}. Surge draw 2 cards", 2)
@@ -201,12 +203,7 @@ ComboCoreCards = {
     "Kindle": 6,
 }
 
-ComboExtensionCards = {
-    "Kindle": 4,
-    "Overflow the Aetherwell": 6,
-    "Open the Flood Gates": 6,
-    "Aether Flare": 8,
-}
+
 
 def sortArsenalPlayPriority(card):
     if(card.cardName in SetupCards.keys()):
@@ -235,3 +232,16 @@ def sortSetupPlayPriority(card):
     if(card.cardName in SetupCards.keys()):
         return SetupCards[card.cardName]   
     return 0
+
+def sortExtensionPlayPriority(card):
+    if(card.cardName in ComboExtensionCards.keys()):
+        return ComboExtensionCards[card.cardName]   
+    return 10
+
+ComboExtensionCards = {
+    "Aether Wildfire": 1,
+    "Overflow the Aetherwell": 2,
+    "Open the Flood Gates": 3,
+    "Aether Flare": 4,
+    "Sonic Boom": 5
+}
