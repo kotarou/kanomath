@@ -87,7 +87,19 @@ class Card:
                 player.deck.optBack(top, bottom)
 
             if(role == "combo"):
-                player.deck.optBack(optCards, [])
+                # For sanities sake, pretend we're not using eye to guarantee rags / kindle blue draws
+                # And instead are using it to avoid bricks
+                for optcard in optCards:
+                    if(optcard.cardName in SetupCards.keys() or not optcard.cardType == "action"):
+                        bottom.append(optcard)
+                    else:
+                        top.append(optcard)
+                
+                # Top opt is complex in combo turn, based on state. Ignore that for now
+                
+                kprint(f"Opting with Eye. Saw: {optCards}, Top: {top}, Bottom: {bottom}", 2)
+                player.deck.optBack(top, bottom)
+
 
 
 
@@ -123,13 +135,31 @@ class Card:
 
         if self.cardName == "Gaze the Ages" and player.wizardNAAPlayedThisTurn > 0:
             # TODO: opt 2
+
+            optCards = player.deck.opt(2)
+            top = []
+            bottom = []
+
+            # For sanities sake, pretend we're not using eye to guarantee rags / kindle blue draws
+            # And instead are using it to avoid bricks
+            for optcard in optCards:
+                if(optcard.cardName in SetupCards.keys() or not optcard.cardType == "action"):
+                    bottom.append(optcard)
+                else:
+                    top.append(optcard)
+            
+            # Top opt is complex in combo turn, based on state. Ignore that for now
+            
+            kprint(f"Opting with {self}. Saw: {optCards}, Top: {top}, Bottom: {bottom}", 3)
+            player.deck.optBack(top, bottom)
+
             kprint(f"Resolving {self} back to hand.", 3)
             player.hand.append(self)
             # kprint(f"player hand: {player.hand}.", 3)
 
         elif "Potion" in self.cardName:
             player.arena.append(self) 
-            
+
         else:
             player.discard.append(self)
 
