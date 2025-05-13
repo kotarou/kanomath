@@ -1,4 +1,4 @@
-from src.kanomath import Player
+from src.kanomath.player import Player
 # Eventually import argparse for info
 
 

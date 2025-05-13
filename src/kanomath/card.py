@@ -1,5 +1,5 @@
 from colored import Fore, Style
-from . import util 
+from .util import kprint 
 # from enum import Enum
 
 # class Color(Enum):

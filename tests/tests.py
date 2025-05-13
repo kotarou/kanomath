@@ -1,4 +1,5 @@
-from .context import *
+from kanomath.player import Player
+from kanomath.card import Card
 import pytest
 
 class TestArsenal:

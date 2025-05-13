@@ -135,7 +135,7 @@ class Player:
     def playCard(self, card: Card, zone: str | list, **kwargs) -> bool:
 
         asInstant   = kwargs.get('asInstant', False)
-        needsRemove = kwargs.get('removeFromZone', False)
+        needsRemove = kwargs.get('removeFromZone', True)
         discard     = kwargs.get('discard', False)
         viaStormies = kwargs.get('stormies', False)
 
@@ -178,6 +178,7 @@ class Player:
         for card in zone:
             if card.cardName == targetCardName:
                 self.playCard(card, zone)
+                return True
         
         return False
 
