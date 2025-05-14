@@ -1,5 +1,5 @@
-from cards.interface import WizardNAA, determine_arcane_damage
-from kanomath.player import Player
+from .interface import WizardNAA, determine_arcane_damage
+from src.kanomath.player import Player
 
 # The following cards are not implemented because honestly why bother
 #   glyph Overlay

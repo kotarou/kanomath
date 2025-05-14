@@ -1,5 +1,5 @@
 from .interface import WizardNAA, determine_arcane_damage, determine_pitch
-from kanomath.player import Player
+from src.kanomath.player import Player
 
 
 # TODO: This can inherit the class of effects of InstantDiscard

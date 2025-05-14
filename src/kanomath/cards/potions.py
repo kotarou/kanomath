@@ -1,5 +1,5 @@
 from .interface import GenericNAA
-from kanomath.player import Player
+from src.kanomath.player import Player
 
 class Potion(GenericNAA):
 

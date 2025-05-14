@@ -1,7 +1,7 @@
 from colored import Fore, Style
 from enum import Enum
 
-from kanomath.player import Player
+from src.kanomath.player import Player
 
 
 

@@ -1,14 +1,9 @@
-
-from cards.onhits import AetherWildfire
-from cards.other import CinderingForesight
-from cards.surge import Overflow
 from src.kanomath.player import Player
 from src.kanomath.opponent import Opponent
 from src.kanomath.controller import *
 # Eventually import argparse for info
 
-from cards.potions import EnergyPotion
-from cards.vanilla import AetherDart
+from src.kanomath.cards import EnergyPotion, AetherDart, AetherWildfire, CinderingForesight, Overflow
 
 if __name__ == "__main__":
     
