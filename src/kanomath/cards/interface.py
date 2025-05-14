@@ -1,9 +1,7 @@
 from colored import Fore, Style
 from enum import Enum
 
-from src.kanomath.player import Player
-
-
+from kanomath.player import Player
 
 def print_colour(input: int | str):
 

@@ -1,5 +1,5 @@
 from .interface import WizardNAA
-from src.kanomath.player import Player
+from kanomath.player import Player
 
 
 class GazeTheAges(WizardNAA):
