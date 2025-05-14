@@ -1,6 +1,6 @@
 
-from card.interface import WizardNAA, determine_arcane_damage
-from src.kanomath.player import Player
+from .interface import WizardNAA, determine_arcane_damage
+from kanomath.player import Player
 
 class AetherArc(WizardNAA):
 

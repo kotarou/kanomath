@@ -1,7 +1,9 @@
 from colored import Fore, Style
 from enum import Enum
 
-from src.kanomath.player import Player
+from kanomath.player import Player
+
+
 
 def print_colour(input: int | str):
 
@@ -92,12 +94,14 @@ class Card2:
 
         # A subclass might have already set our pitch
         # If not, set it to pearl, not because thats a sane default, but because its easy to spot
-        if not hasattr(self, "pitch"):
+        if not hasattr(self, "colour"):
             self.colour   = kwargs.get('colour', "pearl")
         
         # Some subclasses will have initialized this already. 
         if not hasattr(self, "keywords"):
             self.ketwords = []
+
+        
 
     # In the future, variable costs may become relevant. 
     # This property will interface with that code
@@ -141,11 +145,19 @@ class GenericNAA(Card2):
 
 class WizardNAA(Card2):
     cardClass = "wizard"
-    block = 3
     cardType = "action"
     cardSubType = ""
 
-    arecaneDealt = 0
+    arcaneDealt = 0
+
+    def __init__(self, owner: Player, zone = "deck", *args, **kwargs):
+
+        # Almost all wizard NAA block 3, so setit here as a default
+        if not hasattr(self, "block"):
+            self.block   = 3
+
+        Card2.__init__(self, owner, zone, *args, **kwargs)
+
 
     def on_play(self):
         # Increment the wizardNAA playerd tally for controlling player
