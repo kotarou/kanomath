@@ -3,86 +3,158 @@ from enum import Enum
 
 from src.kanomath.player import Player
 
-def PrintColor(pitch: int):
+def print_colour(input: int | str):
 
-    match pitch:
-        case 0:
-            return Fore.grey
-        case 1:
+    match input:
+        case 0 | "p" | "pearl":
+            return Fore.grey_0
+        case 1 | "r" | "red":
             return Fore.red
-        case 2:
+        case 2 | "y" | "yellow":
             return Fore.yellow
-        case 3:
+        case 3 | "b" | "blue":
             return Fore.blue               
         case _:
             return Fore.white
 
+def determine_pitch(colour: str) -> int:
+
+    match colour:
+        case "r" | "red":
+            return 1
+        case "y" | "yellow":
+            return 2
+        case "b" | "blue":
+            return 3
+        case _:
+            # Also handles pearl
+            return 0
+
+def determine_colour(input: str | int) -> str:
+
+    # Match three cases: single letter, number, or sent the correct form anyway
+
+    match input:
+        case "r" | 1 | "red":
+            return "red"
+        case "y" | 2 | "yellow":
+            return "yellow"
+        case "b" | 3 | "blue":
+            return "blue"
+        case _:
+            # Also handles pearl
+            return "pearl"
+
+def determine_arcane_damage(base: int, colour: str) -> int:
+    delta = 0
+
+    match colour:
+        case "red" | "r":
+            delta = 0
+        case "yellow" | "y":
+            delta = 1        
+        case "blue" | "b":
+            delta = 2        
+        case _:
+             delta = 0
+
+    return base - delta
 
 class Card2:
 
-    zone: str
-
-    pitch: int
-    block: int
-    _cost: int
-    
-    arcane: int
-
+    # Game state details
     controller: Player
     owner: Player
+    zone: str
 
-    cardClass: str = "generic"
+    # Intrinsic card details
+    pitch: int
+    block: int
+    cardClass: str
+
+    # Card details that are later controlled with getter and setter functions for whatever reason
+    _cost: int
+    _colour: str
 
     keywords: list[str]
 
-    def __init__(self, owner: Player, zone = "deck"):
-        self.zone = zone
-        self.keywords = []
-
-        self.owner = owner
-        self.controller = owner
-
+    # Simple coloured detail of the card
     def __str__(self):
-        return f"{PrintColor(self.pitch)}{self.cardName}{Style.reset}"
+        return f"{print_colour(self.colour)}{self.cardName} ({self.pitch}){Style.reset}"
 
     def __repr__(self):
         return self.__str__()
+
+    def __init__(self, owner: Player, zone = "deck", *args, **kwargs):
+        self.zone = zone
+        self.owner = owner
+        self.controller = owner
+
+        # A subclass might have already set our pitch
+        # If not, set it to pearl, not because thats a sane default, but because its easy to spot
+        if not hasattr(self, "pitch"):
+            self.colour   = kwargs.get('colour', "pearl")
+        
+        # Some subclasses will have initialized this already. 
+        if not hasattr(self, "keywords"):
+            self.ketwords = []
 
     # In the future, variable costs may become relevant. 
     # This property will interface with that code
     @property
     def cost(self) -> int:
         return self._cost
+    @cost.setter
+    def cost(self, value):
+        self._cost = value
     
+    # Our pitch value is determined by our colour, and is not otherwise an intrinsic aspect of the card
     @property
-    def dealsArcane(self) -> bool:
-        return self.arcane and self.arcane > 0
-
-    def play(self):
-        pass
-
-    def pitch(self):
-        pass
-
-    def activate(self):
-        pass
-
-
-
-class Wizard(Card2):
-    cardClass = "wizard"
+    def pitch(self) -> int:
+        return determine_pitch(self.colour)
     
-    def play(self):
-        # Increment the wizardNAA playerd tally for controlling player
-        # self.controller.
+    # Ensure we don't accidentally set our colour using a shorthand "r"
+    @property
+    def colour(self) -> str:
+        return self._colour
+    @colour.setter
+    def colour(self, value):
+        self._colour = determine_colour(value)
+
+    # @property
+    # def dealsArcane(self) -> bool:
+    #     return self.arcane and self.arcane > 0
+
+    def on_play(self):
         pass
 
-class Generic():
-    cardClass = "generic"
+    def on_pitch(self):
+        pass
 
-class NAA():
+    def on_activate(self):
+        pass
+
+class GenericNAA(Card2):
+    cardClass = "generic"
     cardType = "action"
     cardSubType = ""
 
-class Instant():
+class WizardNAA(Card2):
+    cardClass = "wizard"
+    block = 3
+    cardType = "action"
+    cardSubType = ""
+
+    arecaneDealt = 0
+
+    def on_play(self):
+        # Increment the wizardNAA playerd tally for controlling player
+        # self.controller.
+        pass 
+
+class WizardInstant():
+    cardClass = "wizard"
+    # We don;t bother differentating pearl and 0 block
+    block = 0
     cardType = "instant"
+
