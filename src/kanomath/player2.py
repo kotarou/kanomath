@@ -1,4 +1,4 @@
-from kanomath.zones import Arena, Arsenal, Banish, Deck, Discard, Hand, Pitch, Zone
+import kanomath.zones as zone
 
 
 class Player2:
@@ -7,12 +7,12 @@ class Player2:
     id = "player"
 
     # We have a few relevant zones
-    hand: Hand
-    arena: Arena
-    pitch: Pitch
-    discard: Discard
-    banish: Banish
-    deck: Deck
+    hand: zone.Hand
+    arena: zone.Arena
+    pitch: zone.Pitch
+    discard: zone.Discard
+    banish: zone.Banish
+    deck: zone.Deck
     
     # Core player details
     base_intellect = 4
@@ -47,17 +47,15 @@ class Player2:
 
     def __init__(self):
 
-        self.hand = Hand(self.base_intellect)
-        self.arena = Arena()
-        self.arsenal = Arsenal(self.max_cards_in_arsenal)
-        self.pitch = Pitch()
-        self.discard = Discard()
-        self.banish = Banish()
-        self.deck = Deck()
+        self.hand = zone.Hand(self.base_intellect)
+        self.arena = zone.Arena()
+        self.arsenal = zone.Arsenal(self.max_cards_in_arsenal)
+        self.pitch = zone.Pitch()
+        self.discard = zone.Discard()
+        self.banish = zone.Banish()
+        self.deck = zone.Deck()
 
-    
-
-    def get_zone_by_name(zone_name: str) -> Zone:
+    def get_zone_by_name(self, zone_name: str) -> zone.Zone:
 
         match zone_name:
             case "hand":
@@ -73,4 +71,12 @@ class Player2:
             case "arena":
                 return self.arena        
             case _:
-                raise Exception("Attempting to access zone that doesn't exist: {zone_name}")
+                raise Exception(f"Attempting to access zone that doesn't exist: {zone_name}")
+    
+
+    def gain_pitch(self, num_resources: int):
+        
+        if num_resources < 1:
+            raise Exception(f"Attempting to gain {num_resources} pitch. The minimum to gain is 1. ")
+
+        self.pitch_floating += num_resources

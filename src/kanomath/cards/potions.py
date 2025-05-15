@@ -1,37 +1,51 @@
-from .interface import GenericNAA
+from kanomath.functions import move_card_to_zone
+from .card import ActivatableNAA
 from kanomath.player import Player
 
-class Potion(GenericNAA):
+
+
+class Potion(ActivatableNAA):
+
+    block = 0
+    colour = "blue"
+    card_class = "generic"
+
+    resolve_to_zone = "arena"
+    activate_from_zone = "arena"
 
     def __init__(self, owner: Player, zone: str):
-        self.block = 0
-        self.colour = "blue"  
         super().__init__(owner, zone)
 
-    def on_play(self):
-        self.controller.arena.append(self)
-        self.zone = "arena"
+    # def on_play(self):
+    #     self.controller.arena.append(self)
+    #     self.zone = "arena"
 
     def on_activate(self):
-        print("potion")
-        self.controller.discard.append(self)
-        self.zone = "discard"
+        ActivatableNAA.on_activate(self)
+
+    #     if self.can_activate:
+    #         move_card_to_zone(self, self.activate_to_zone)
+
 
 
 class EnergyPotion(Potion):
 
-    def __init__(self, owner: Player, zone: str):
-        self.cardName = "Energy Potion"       
+    card_name = "Energy Potion"
+    card_name_short = "epot"
+
+    def __init__(self, owner: Player, zone: str):      
         super().__init__(owner, zone)
 
     def on_activate(self):
-        # self.controller.adjustResources(2)
+        self.controller.gain_pitch(2)
         Potion.on_activate(self)
 
 class DejaVuPotion(Potion):
 
-    def __init__(self, owner: Player, zone: str):
-        self.cardName = "Potion of Deja Vu"       
+    card_name = "Potion of Deja Vu"
+    card_name_short = "dpot"
+
+    def __init__(self, owner: Player, zone: str):       
         Potion.__init__(self, owner, zone)
 
     def on_activate(self):
@@ -43,7 +57,7 @@ class DejaVuPotion(Potion):
 class ClarityPotion(Potion):
 
     def __init__(self, owner: Player, zone: str):
-        self.cardName = "Clarity Potion"       
+        self.card_name = "Clarity Potion"       
         Potion.__init__(self, owner, zone)
 
     def on_activate(self):

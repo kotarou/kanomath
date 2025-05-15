@@ -1,7 +1,6 @@
-from kanomath.cards.other import CinderingForesight
-from kanomath.cards.onhits import AetherWildfire
-from kanomath.cards.potions import EnergyPotion
-from kanomath.player import Player
+import kanomath.cards as card
+from kanomath.functions import create_card_in_zone
+from kanomath.player2 import Player2
 import pytest
 
 
@@ -11,35 +10,71 @@ class TestCard2:
     
     def test_creating_cards(self):
 
-        player = Player()
+        player = Player2()
 
-        # Test the creation of a potion, a card with multiple predefined properties
-        epot = EnergyPotion(player, "arena")
+        # Test the direct creation of a potion, a card with multiple predefined properties
+        epot = card.EnergyPotion(player, "arena")
         assert epot.pitch == 3
         assert epot.colour == "blue"
         assert epot.block == 0
         assert epot.zone == "arena"
+        assert epot.card_name == "Energy Potion"
+        assert epot.card_name_short == "epot"
+
+        # Test creating a card in a zone
+        dpot = create_card_in_zone(card.DejaVuPotion, player, "arena")
+        assert dpot.pitch == 3
+        assert dpot.zone == "arena"
+        assert dpot.card_name == "Potion of Deja Vu"
+        assert player.arena.contains_card(dpot)
+        
+        dpot2 = create_card_in_zone(card.DejaVuPotion, player, "hand")
+        assert dpot2.zone == "hand"
+        assert player.hand.contains_card(dpot2)
 
         # Test the creation of aether wildfire, a majestic with only one version
-        wildfire = AetherWildfire(player, "hand")
+        wildfire = card.AetherWildfire(player, "hand")
         assert wildfire.pitch == 1
         assert wildfire.colour == "red"
         assert wildfire.block == 3
         assert wildfire.zone == "hand"
 
         # Test the creation of a card that has a default pitch assumption (in this case, red)
-        cindering = CinderingForesight(player, "arsenal")
+        cindering = card.CinderingForesight(player, "arsenal")
         assert cindering.pitch == 1
         assert cindering.colour == "red"
         assert cindering.block == 2
         assert cindering.zone == "arsenal"
 
         # Test the creation of card with non-default colour shorthand used
-        cindering = CinderingForesight(player, "arsenal", "y")
+        cindering = card.CinderingForesight(player, "arsenal", "y")
         assert cindering.pitch == 2
         assert cindering.colour == "yellow"
 
        # Test the creation of card with non-default colour
-        cindering = CinderingForesight(player, "arsenal", "blue")
+        cindering = card.CinderingForesight(player, "arsenal", "blue")
         assert cindering.pitch == 3
         assert cindering.colour == "blue"
+
+    def test_activating_cards(self):
+
+        player = Player2()
+
+        # Test the activation of an energy potion from hand
+        epot = create_card_in_zone(card.EnergyPotion, player, "arena")
+        epot.activate()
+
+        assert player.pitch_floating == 2
+        assert not player.arena.contains_card(epot)
+        assert player.discard.contains_card(epot)
+
+        # Test we're absolutely not allowed to reactivate a potion
+        with pytest.raises(Exception) as error_info:
+            epot.activate()
+        assert "invalid zone" in str(error_info.value)
+
+        # Test we're not allowed to activate a potion from hand
+        dpot = create_card_in_zone(card.DejaVuPotion, player, "hand")
+        with pytest.raises(Exception) as error_info:
+            dpot.activate()
+        assert "invalid zone" in str(error_info.value)

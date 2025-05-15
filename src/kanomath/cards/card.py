@@ -1,7 +1,13 @@
+from __future__ import annotations
 from colored import Fore, Style
 from enum import Enum
 
-from kanomath.player import Player
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from kanomath.player2 import Player2
+
+
+from kanomath.functions import move_card_to_zone
 
 def print_colour(input: int | str):
 
@@ -63,14 +69,18 @@ def determine_arcane_damage(base: int, colour: str) -> int:
 class Card2:
 
     # Game state details
-    controller: Player
-    owner: Player
+    controller: Player2
+    owner: Player2
     zone: str
+    # TODO: explicitly type targets
+    target: any
 
     # Intrinsic card details
     pitch: int
     block: int
-    cardClass: str
+    card_class: str
+    card_name: str
+    card_name_short: str
 
     # Card details that are later controlled with getter and setter functions for whatever reason
     _cost: int
@@ -78,14 +88,17 @@ class Card2:
 
     keywords: list[str]
 
+    # When we play the card, where will it resolve to?
+    resolve_to_zone = "discard"
+
     # Simple coloured detail of the card
     def __str__(self):
-        return f"{print_colour(self.colour)}{self.cardName} ({self.pitch}){Style.reset}"
+        return f"{print_colour(self.colour)}{self.card_name} ({self.pitch}){Style.reset}"
 
     def __repr__(self):
         return self.__str__()
 
-    def __init__(self, owner: Player, zone = "deck", *args, **kwargs):
+    def __init__(self, owner: Player2, zone = "deck", *args, **kwargs):
         self.zone = zone
         self.owner = owner
         self.controller = owner
@@ -128,13 +141,40 @@ class Card2:
     #     return self.arcane and self.arcane > 0
 
     def on_play(self):
+        move_card_to_zone(self, self.resolve_to_zone)
         pass
 
     def on_pitch(self):
         pass
 
+
+class ActivatableNAA(Card2):
+    card_type = "action"
+    card_subtype = ""
+
+    activate_to_zone = "discard"
+    activate_from_zone: str
+
     def on_activate(self):
         pass
+
+    def activate(self):
+        if self.can_activate:
+            self.on_activate()
+            move_card_to_zone(self, self.activate_to_zone)
+        else:
+            raise Exception(f"Invalid activation of {self}. Reason: {self.activation_error_reason}")
+
+    @property
+    def can_activate(self):
+        return self.zone == self.activate_from_zone
+
+    @property
+    def activation_error_reason(self):
+        if self.zone != self.activate_from_zone:
+            return "invalid zone"
+        return "unknown"
+
 
 class GenericNAA(Card2):
     cardClass = "generic"
@@ -148,7 +188,7 @@ class WizardNAA(Card2):
 
     arcaneDealt = 0
 
-    def __init__(self, owner: Player, zone = "deck", *args, **kwargs):
+    def __init__(self, owner: Player2, zone = "deck", *args, **kwargs):
 
         # Almost all wizard NAA block 3, so setit here as a default
         if not hasattr(self, "block"):

@@ -1,25 +1,34 @@
 from collections import deque
 from typing import Deque
 import random
+import copy
 
-from .cards.interface import Card2
+from kanomath.functions import move_card_to_zone
+
+from .cards import Card2
 
 import typing
 if typing.TYPE_CHECKING:
     from kanomath.player2 import Player2
-
-def move_cards_to_zone(cards: Card2 | list[Card2], new_zone: str):
-    for card in cards:
-        move_card_to_zone(card, new_zone)
-
-def move_card_to_zone(card: Card2, new_zone: str):
-    card.zone = new_zone
-    card.owner.get_zone_by_name(new_zone).append(card)
-
+    
 class Zone:
 
     cards: Deque['Card2']
     # owner: 'Player2'
+    zone_name = ""
+
+    def __str__(self):
+        str = f"[{self.zone_name}, {self.size} card"
+
+        if self.size == 0:
+            return str + "s]"
+        elif self.size == 1:
+            return str + f": {self.cards[0]}]"
+        elif self.size == 2:
+            return str + f"s: {self.cards[0]}, {self.cards[0]}]"
+        else:
+            return str + f"s: {self.cards[0]}, ..., {self.cards[0]}]"
+
 
     def __init__(self):
     # def __init__(self, owner: 'Player2'):
@@ -28,9 +37,7 @@ class Zone:
 
         # Some zones will have already constructed this
         if not hasattr(self, "cards"):
-            self.cards = deque()
-
-        
+            self.cards = deque()  
     
     @property 
     def size(self):
@@ -59,22 +66,57 @@ class Zone:
         return out
     
     # While probably not ever needed, these methods help me from the framework for later actions
-    def banish_by_index(self, idxs: list[int]) -> None:
+    # def banish_by_index(self, idxs: list[int]) -> None:
         
-        if len(idxs) > self.size:
-            raise Exception(f"Attempting to banish more cards than in zone {self}")
+    #     if len(idxs) > self.size:
+    #         raise Exception(f"Attempting to banish more cards than in zone {self}")
 
-        for i in sorted(idxs, reverse=True):
-            # del test_list[i]
-            card = self.cards[i].copy()
-            move_card_to_zone(card, "banish")
-            del self.cards[i]
+    #     for i in sorted(idxs, reverse=True):
+    #         # del test_list[i]
+    #         card = self.cards[i].copy()
+    #         move_card_to_zone(card, "banish")
+    #         del self.cards[i]
 
-            
+    def contains_card(self, card) -> bool:
+        try:
+            idx = self.cards.index(card)
+            return True
+        except ValueError as ve:
+            return False
+
+    def remove_card(self, card) -> Card2:
+
+        idx = self.cards.index(card)
+
+        if idx == -1:
+            raise Exception(f"Attempting to remove {card} from {self}, but it was not present")
+
+        self.cards.remove(card)
+        card.zone = ""
+
+        return card
+    
+    def add_card(self, card, idx = None):
+
+        if idx is None or idx < 0:
+            idx = 0
+
+        if idx == 0:
+            self.cards.appendleft(card)
+        elif idx >= self.size:
+            self.cards.append(card)
+        else:
+            self.cards.insert(idx, card)
+        
+        card.zone = self.zone_name
+
+        
+
 
 class Deck(Zone):
 
     opt_incomplete: bool
+    zone_name = "deck"
 
     def __init__(self):
          self.opt_incomplete = False
@@ -151,6 +193,7 @@ class Deck(Zone):
 
 class Hand(Zone):
     
+    zone_name = "hand"
     intellect: int
 
     def __init__(self, intellect):
@@ -159,7 +202,8 @@ class Hand(Zone):
         Zone.__init__(self)
     
 class Arsenal(Zone):
-    
+
+    zone_name = "arsenal"
     capacity: int
 
     def __init__(self, capacity):
@@ -170,20 +214,28 @@ class Arsenal(Zone):
 
 class Pitch(Zone):
     
+    zone_name = "pitch"
+
     def __init__(self):
         Zone.__init__(self)
 
 class Banish(Zone):
     
+    zone_name = "banish"
+
     def __init__(self):
         Zone.__init__(self)
 
 class Discard(Zone):
     
+    zone_name = "discard"
+
     def __init__(self):
         Zone.__init__(self)
 
 class Arena(Zone):
+
+    zone_name = "arena"
     
     def __init__(self):
         Zone.__init__(self)
