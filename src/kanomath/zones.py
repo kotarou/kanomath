@@ -61,7 +61,8 @@ class Zone:
 
         for i in range(numToTake):
             idx = random.randint(0, self.size)
-            out.append(self.cards.remove(idx))
+            card = self.cards[idx]
+            out.append(self.cards.remove(card))
 
         return out
     
@@ -83,6 +84,19 @@ class Zone:
             return True
         except ValueError as ve:
             return False
+
+    def contains_card_name(self, card_name: str) -> bool:
+        for card in self.cards:
+            if card.card_name == card_name or card.card_name_short == card_name:
+                return True
+        return False
+    
+    def count_cards_name(self, card_name: str) -> int:
+        count = 0
+        for card in self.cards:
+            if card.card_name == card_name or card.card_name_short == card_name:
+                count += 1
+        return count
 
     def remove_card(self, card) -> Card2:
 
@@ -131,13 +145,13 @@ class Deck(Zone):
             return []
         
         if num_to_take == 1 or self.size == 1:
-            return self.card.popleft()
+            return self.cards.popleft()
         
         num_to_take = min(self.size, num_to_take)
 
         out = []
         for i in range(num_to_take):
-            out.append(self.card.popleft())
+            out.append(self.cards.popleft())
 
         return out
 
@@ -153,7 +167,7 @@ class Deck(Zone):
 
         out = []
         for i in range(num_to_opt):
-            out.append(self.card.popleft())
+            out.append(self.cards.popleft())
 
         if len(out):
             self.opt_incomplete = True
@@ -201,6 +215,15 @@ class Hand(Zone):
 
         Zone.__init__(self)
     
+    @property
+    def potential_pitch(self) -> int:
+        pitch = 0
+        for card in self.cards:
+                pitch += card.pitch
+        return pitch
+
+
+
 class Arsenal(Zone):
 
     zone_name = "arsenal"

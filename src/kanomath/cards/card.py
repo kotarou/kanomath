@@ -73,17 +73,18 @@ class Card2:
     owner: Player2
     zone: str
     # TODO: explicitly type targets
-    target: any
+    # target: 
 
     # Intrinsic card details
-    pitch: int
+    # pitch: int
     block: int
     card_class: str
     card_name: str
     card_name_short: str
 
     # Card details that are later controlled with getter and setter functions for whatever reason
-    _cost: int
+    # _cost: int
+    cost: int
     _colour: str
 
     keywords: list[str]
@@ -116,12 +117,12 @@ class Card2:
 
     # In the future, variable costs may become relevant. 
     # This property will interface with that code
-    @property
-    def cost(self) -> int:
-        return self._cost
-    @cost.setter
-    def cost(self, value):
-        self._cost = value
+    # @property
+    # def cost(self) -> int:
+    #     return self._cost
+    # @cost.setter
+    # def cost(self, value):
+    #     self._cost = value
     
     # Our pitch value is determined by our colour, and is not otherwise an intrinsic aspect of the card
     @property

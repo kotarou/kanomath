@@ -8,6 +8,7 @@ class Opponent:
 
     health = 40
     lastHit = 0
+    id = "opponent"
 
     def __init__(self):
         pass
@@ -40,19 +41,19 @@ class Opponent:
 #       play cnc, or cnc+pummel (for initial simplicity opponent will not hold either, nor will they arsenal one)
 #       arsenal oasis
 
-class OpponentAction(ABC):
+# class OpponentAction(ABC):
 
-    @property
-    def priority(self, opponent):
-        return 0
+#     @property
+#     def priority(self, opponent):
+#         return 0
 
-    def precondition(self, opponent):
-        return True
+#     def precondition(self, opponent):
+#         return True
     
-    def effect(self, opponent, player):
-        # e.g. Anothos: player.TakeDamage(6), opponent.useResources(4)
-        # e.g. opponent.arsenal(Card)
-        pass
+#     def effect(self, opponent, player):
+#         # e.g. Anothos: player.TakeDamage(6), opponent.useResources(4)
+#         # e.g. opponent.arsenal(Card)
+#         pass
 
 class OpponentType:
     
@@ -143,64 +144,64 @@ class Opponent2:
         self.current_life = self.details.starting_life
         self.cards_in_hand = 0
 
-    def turn_pitch_available(self) -> int:
-        return self.details.card_assume_pitch * self.cards_in_hand
+    # def turn_pitch_available(self) -> int:
+    #     return self.details.card_assume_pitch * self.cards_in_hand
 
-    # What is the cost, in lost resources that could be used to defend, of attacking?
-    def attack_cost(self) -> int:
-        return self.details.damage_cost_per_turn + (self.details.damage_cards_per_turn * self.details.card_assume_pitch)
+    # # What is the cost, in lost resources that could be used to defend, of attacking?
+    # def attack_cost(self) -> int:
+    #     return self.details.damage_cost_per_turn + (self.details.damage_cards_per_turn * self.details.card_assume_pitch)
 
-    def can_attack(self) -> bool:
-        return self.details.card_assume_pitch * (self.cards_in_hand - self.details.damage_cards_per_turn) >= self.details.damage_cost_per_turn
+    # def can_attack(self) -> bool:
+    #     return self.details.card_assume_pitch * (self.cards_in_hand - self.details.damage_cards_per_turn) >= self.details.damage_cost_per_turn
     
-    def will_attack(self) -> bool:
+    # def will_attack(self) -> bool:
         
-        resources   = self.turn_pitch_available()
-        attack_cost = self.attack_cost()
-        spare_pitch = resources - attack_cost
+    #     resources   = self.turn_pitch_available()
+    #     attack_cost = self.attack_cost()
+    #     spare_pitch = resources - attack_cost
 
-        if self.details.strategy == "defensive":
-            return spare_pitch >= self.details.ab
-        else:
-            return spare_pitch > 0
+    #     if self.details.strategy == "defensive":
+    #         return spare_pitch >= self.details.ab
+    #     else:
+    #         return spare_pitch > 0
     
-    # As a general rule, an aggressive opponent will only prevent as much as is required to attack back
-    # A midrange opponent is willing to not attack in the next turn to prevent super important on-hits
-    # A defensive opponent will want to block everything but always keep enough resources to ab 3 in their own turn
-    def will_defend_in_player_turn(self, threat: Card2) -> bool:
+    # # As a general rule, an aggressive opponent will only prevent as much as is required to attack back
+    # # A midrange opponent is willing to not attack in the next turn to prevent super important on-hits
+    # # A defensive opponent will want to block everything but always keep enough resources to ab 3 in their own turn
+    # def will_defend_in_player_turn(self, threat: Card2) -> bool:
 
-        resources   = self.turn_pitch_available()
-        attack_cost = self.attack_cost()
-        spare_pitch = resources - attack_cost
+    #     resources   = self.turn_pitch_available()
+    #     attack_cost = self.attack_cost()
+    #     spare_pitch = resources - attack_cost
 
-        if self.details.strategy == "defensive":
-            return resources >= 3
-        if self.details.strategy == "midrange":
-            if threat.card_name in self.must_blocks:
-                return True
-            else:
-                return spare_pitch >= 3
-        else:
-            # aggressive
-            return spare_pitch >= 0
+    #     if self.details.strategy == "defensive":
+    #         return resources >= 3
+    #     if self.details.strategy == "midrange":
+    #         if threat.card_name in self.details.must_blocks:
+    #             return True
+    #         else:
+    #             return spare_pitch >= 3
+    #     else:
+    #         # aggressive
+    #         return spare_pitch >= 0
         
-    def use_ab(self, turn_player: str, threat: Card2, damage_threatened: int) -> int:
+    # def use_ab(self, turn_player: str, threat: Card2, damage_threatened: int) -> int:
         
-        resources   = self.turn_pitch_available()
-        attack_cost = self.attack_cost()
-        spare_pitch = resources - attack_cost
+    #     resources   = self.turn_pitch_available()
+    #     attack_cost = self.attack_cost()
+    #     spare_pitch = resources - attack_cost
 
-        resources_used  = 0
-        cards_used      = 0
-        prevention      = 0
+    #     resources_used  = 0
+    #     cards_used      = 0
+    #     prevention      = 0
 
-        if turn_player == "player" and self.will_defend_in_player_turn():
-            cards_to_use = spare_pitch // self.details.card_assume_pitch
-            self.cards_in_hand -= cards_to_use
-            self.resources_floating +=  cards_to_use * self.details.card_assume_pitch
+    #     if turn_player == "player" and self.details.will_defend_in_player_turn():
+    #         cards_to_use = spare_pitch // self.details.card_assume_pitch
+    #         self.cards_in_hand -= cards_to_use
+    #         self.resources_floating +=  cards_to_use * self.details.card_assume_pitch
 
-            prevention = min(self.details.ab, self.resources_floating)
-            self.resources_floating -= prevention
+    #         prevention = min(self.details.ab, self.resources_floating)
+    #         self.resources_floating -= prevention
         
-        return prevention
+    #     return prevention
 

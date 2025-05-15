@@ -1,10 +1,10 @@
 from .card import WizardNAA
-from kanomath.player import Player
+from kanomath.player2 import Player2
 
 
 class GazeTheAges(WizardNAA):
 
-    def __init__(self, owner: Player, zone: str):
+    def __init__(self, owner: Player2, zone: str):
         self.card_name = "Gaze the Ages"
         self.cost = 0 
         self.colour = "blue"
@@ -17,7 +17,7 @@ class GazeTheAges(WizardNAA):
 
 class CinderingForesight(WizardNAA):
 
-    def __init__(self, owner: Player, zone: str, colour: str = "r"):
+    def __init__(self, owner: Player2, zone: str, colour: str = "r"):
         self.card_name = "Cindering Foresight"
         self.cost = 0 
         self.block = 2

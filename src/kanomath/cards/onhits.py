@@ -1,10 +1,10 @@
 
 from .card import WizardNAA, determine_arcane_damage
-from kanomath.player import Player
+from kanomath.player2 import Player2
 
 class AetherArc(WizardNAA):
 
-    def __init__(self, owner: Player, zone: str):
+    def __init__(self, owner: Player2, zone: str):
         self.card_name = "Aether Arc"
         self.arcane = 1
         self.cost = 0
@@ -16,7 +16,7 @@ class AetherArc(WizardNAA):
 
 class AetherSpindle(WizardNAA):
 
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Aether Spindle"
         self.arcane = determine_arcane_damage(4, colour)
         self.cost = 2
@@ -27,7 +27,7 @@ class AetherSpindle(WizardNAA):
 
 class AetherFlare(WizardNAA):
 
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Aether Flare"
         self.arcane = determine_arcane_damage(3, colour)
         self.cost = 1 
@@ -38,7 +38,7 @@ class AetherFlare(WizardNAA):
 
 class AetherWildfire(WizardNAA):
 
-    def __init__(self, owner: Player, zone: str):
+    def __init__(self, owner: Player2, zone: str):
         self.card_name = "Aether Wildfire"
         self.arcane = 4
         self.cost = 2
@@ -50,7 +50,7 @@ class AetherWildfire(WizardNAA):
 
 class LessonInLava(WizardNAA):
 
-    def __init__(self, owner: Player, zone: str):
+    def __init__(self, owner: Player2, zone: str):
         self.card_name = "Lesson in Lava"
         self.arcane = 3
         self.cost = 1 
@@ -62,7 +62,7 @@ class LessonInLava(WizardNAA):
 
 class SonicBoom(WizardNAA):
 
-    def __init__(self, owner: Player, zone: str):
+    def __init__(self, owner: Player2, zone: str):
         self.card_name = "Sonic Boom"
         self.arcane = 3
         self.cost = 2

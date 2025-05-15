@@ -1,3 +1,4 @@
+from kanomath.functions import move_cards_between_zones, move_cards_to_zone
 from kanomath.opponent import Opponent
 from kanomath.player2 import Player2
 
@@ -12,7 +13,7 @@ class Game:
     opponent: Opponent
 
     @property
-    def game_should_continue() -> bool:
+    def game_should_continue(self) -> bool:
         # TODO: opponent or player dead
         return True
 
@@ -23,7 +24,6 @@ class Game:
         self.player = Player2()
         self.opponent = Opponent()
 
-        self.game_should_continue = True
 
         # For now
         # TODO: alternate, and track differences
@@ -47,22 +47,28 @@ class Game:
     def run_first_turn(self, turn_player: Player2 | Opponent):
 
         if turn_player.id == "player":
-            self.execute_player_turn()
+            self.run_player_turn()
             # TODO: Opponent draw up
         else:
-            self.execute_opponent_turn()
+            self.run_opponent_turn()
             # TODO: Player draw up
-
-    
+        self.cleanup_turn()    
 
 
     def run_opponent_turn(self):
         # TODO: opponent turn
-        pass
+
+        self.cleanup_turn()
+
     
     def run_player_turn(self):
 
-        if
-
         # TODO: player turn
-        pass
+        self.cleanup_turn()
+
+
+    def cleanup_turn(self):        
+        
+        # At the end, clean up the player's banish
+        # TODO: This should be a method on player, seeing as it assumes the same owner and all
+        move_cards_between_zones(self.player, "banish", "exile")

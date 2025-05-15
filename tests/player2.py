@@ -12,3 +12,7 @@ class TestCard2:
         assert player.hand is not None
         assert player.action_points == 0
         assert player.arsenal.capacity == 1
+
+        # # Sanity Check
+        # if self.use_spellfire and self.use_tunic:
+        #     self.use_tunic = False

@@ -1,12 +1,22 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TypeVar, TYPE_CHECKING
+from types import FunctionType, LambdaType
 if TYPE_CHECKING:
     from kanomath.cards import Card2
     from kanomath.player2 import Player2
 
+T = TypeVar('T')
 
-def move_cards_to_zone(cards: Card2 | list[Card2], new_zone: str):
+def move_cards_between_zones(player: Player2, old_zone_name: str, new_zone_name: str):
+    
+    old_zone = player.get_zone_by_name(old_zone_name)
+    # new_zone = player.get_zone_by_name(new_zone_name)
+
+    for card in old_zone.cards:
+        move_card_to_zone(card, new_zone_name)
+
+def move_cards_to_zone(cards: list[Card2], new_zone: str):
     for card in cards:
         move_card_to_zone(card, new_zone)
 
@@ -26,12 +36,44 @@ def add_card_to_zone(card: Card2, new_zone_name: str, new_controller = None):
     new_zone.add_card(card)
 
 
-def create_card_in_zone(cls: Card2, player: Player2, zone_name: str, *args, **kwargs) -> Card2:
+
+def create_card_in_zone(cls: function, player: Player2, zone_name: str, *args, **kwargs) -> Card2:
 
     # TODO: send relevant kwargs along too
-    card = cls(player, zone_name)
+    card = cls(player, zone_name) # type: ignore
 
     add_card_to_zone(card, zone_name, player)
 
     return card
+
+def remove_first_matching(input: list[T], predicate: function) -> tuple[T | None, list[T]]:
     
+    r1 = None
+
+    for i in range(len(input)):
+        if predicate(input[i]): # type: ignore
+            r1 = input.pop(i)
+            break
+
+    return r1, input
+
+def remove_all_matching(input: list[T], predicate: function) -> tuple[list[T], list[T]]:
+    
+    r1 = []
+
+    for i in range(len(input)):
+        if predicate(input[i]): # type: ignore
+            r1.append(input.pop(i))
+
+    return r1, input
+
+
+def match_card_name(card_name: str | list[str]) -> function:
+
+    if isinstance(card_name, str):
+        return lambda x : x.card_name == card_name or x.card_name_short == card_name
+    else:
+        return lambda x : x.card_name in card_name or x.card_name_short in card_name
+
+def match_card_pitch(pitch: int) -> function:
+    return lambda x : x.pitch == pitch 

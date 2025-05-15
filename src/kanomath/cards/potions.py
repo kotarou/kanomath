@@ -1,19 +1,27 @@
+from __future__ import annotations
+
 from kanomath.functions import move_card_to_zone
 from .card import ActivatableNAA
-from kanomath.player import Player
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from kanomath.player2 import Player2
 
 
+
+POTIONS = ["Energy Potion", "Potion of Deja Vu", "Clarity Potion"]
 
 class Potion(ActivatableNAA):
 
     block = 0
-    colour = "blue"
     card_class = "generic"
 
     resolve_to_zone = "arena"
     activate_from_zone = "arena"
 
-    def __init__(self, owner: Player, zone: str):
+    def __init__(self, owner: Player2, zone: str):
+        self.colour = "blue"
+
         super().__init__(owner, zone)
 
     # def on_play(self):
@@ -33,7 +41,7 @@ class EnergyPotion(Potion):
     card_name = "Energy Potion"
     card_name_short = "epot"
 
-    def __init__(self, owner: Player, zone: str):      
+    def __init__(self, owner: Player2, zone: str):      
         super().__init__(owner, zone)
 
     def on_activate(self):
@@ -45,7 +53,7 @@ class DejaVuPotion(Potion):
     card_name = "Potion of Deja Vu"
     card_name_short = "dpot"
 
-    def __init__(self, owner: Player, zone: str):       
+    def __init__(self, owner: Player2, zone: str):       
         Potion.__init__(self, owner, zone)
 
     def on_activate(self):
@@ -56,8 +64,10 @@ class DejaVuPotion(Potion):
 
 class ClarityPotion(Potion):
 
-    def __init__(self, owner: Player, zone: str):
-        self.card_name = "Clarity Potion"       
+    card_name = "Clarity Potion" 
+    card_name_short = "cpot"
+
+    def __init__(self, owner: Player2, zone: str):
         Potion.__init__(self, owner, zone)
 
     def on_activate(self):
