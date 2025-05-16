@@ -77,3 +77,12 @@ def match_card_name(card_name: str | list[str]) -> function:
 
 def match_card_pitch(pitch: int) -> function:
     return lambda x : x.pitch == pitch 
+
+def card_is_red(card: Card2):
+    return card.colour == "red"
+def card_is_yellow(card: Card2):
+    return card.colour == "yellow"
+def card_is_blue(card: Card2):
+    return card.colour == "blue"
+def card_is_pearl(card: Card2):
+    return card.colour == "pearl"
