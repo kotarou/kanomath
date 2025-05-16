@@ -46,7 +46,8 @@ def create_card_in_zone(cls: function, player: Player2, zone_name: str, *args, *
 
     return card
 
-def remove_first_matching(input: list[T], predicate: function) -> tuple[T | None, list[T]]:
+def remove_first_matching(input: list[T], predicate: function) -> T | None:
+# def remove_first_matching(input: list[T], predicate: function) -> tuple[T | None, list[T]]:
     
     r1 = None
 
@@ -55,17 +56,24 @@ def remove_first_matching(input: list[T], predicate: function) -> tuple[T | None
             r1 = input.pop(i)
             break
 
-    return r1, input
+    # return r1, 
+    return r1
 
-def remove_all_matching(input: list[T], predicate: function) -> tuple[list[T], list[T]]:
+# def remove_all_matching(input: list[T], predicate: function) -> tuple[list[T], list[T]]:
+def remove_all_matching(input: list[T], predicate: function) -> list[T]:
     
     r1 = []
 
-    for i in range(len(input)):
-        if predicate(input[i]): # type: ignore
-            r1.append(input.pop(i))
+    for item in input:
+        if predicate(item): # type: ignore
+            r1.append(item)
 
-    return r1, input
+    for item in r1:
+        input.remove(item)
+
+
+    # return r1, input
+    return r1
 
 
 def match_card_name(card_name: str | list[str]) -> function:

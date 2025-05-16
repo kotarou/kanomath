@@ -25,9 +25,9 @@ class Zone:
         elif self.size == 1:
             return str + f": {self.cards[0]}]"
         elif self.size == 2:
-            return str + f"s: {self.cards[0]}, {self.cards[0]}]"
+            return str + f"s: {self.cards[0]}, {self.cards[1]}]"
         else:
-            return str + f"s: {self.cards[0]}, ..., {self.cards[0]}]"
+            return str + f"s: {self.cards[0]}, ..., {self.cards[-1]}]"
 
 
     def __init__(self):
@@ -49,6 +49,16 @@ class Zone:
     
     def shuffle(self) -> None:
         random.shuffle(self.cards)
+
+    # Primarily a testing method. WARNING: resets cards in zone
+    def seed_with_cards(self, seed_cards: list[Card2]) -> None:
+        
+        if self.size > 0:
+            self.cards.clear()
+
+        for card in seed_cards:
+            card.zone = self.zone_name
+            self.cards.append(card)
 
     # Remove some random cards
     def remove_at_random(self, numToTake: int) -> Card2 | list[Card2]:
@@ -78,7 +88,7 @@ class Zone:
     #         move_card_to_zone(card, "banish")
     #         del self.cards[i]
 
-    def contains_card(self, card) -> bool:
+    def contains_card(self, card: Card2) -> bool:
         try:
             idx = self.cards.index(card)
             return True
@@ -181,8 +191,10 @@ class Deck(Zone):
             raise Exception("Attempting to deopt without opting first.")
 
         # Last card in opt is first card back to top of deck, so we reverse the order
-        self.cards.extendleft(reversed(top))
-        self.cards.extend(bot)
+        for card in reversed(top):
+            self.cards.appendleft(card)
+        for card in bot:
+            self.cards.append(card)
 
         self.opt_incomplete = False
 

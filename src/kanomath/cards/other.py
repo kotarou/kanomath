@@ -1,5 +1,9 @@
+from __future__ import annotations
 from .card import WizardNAA
-from kanomath.player2 import Player2
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from kanomath.player2 import Player2
 
 
 class GazeTheAges(WizardNAA):

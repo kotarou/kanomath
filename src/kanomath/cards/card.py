@@ -111,9 +111,11 @@ class Card2:
         
         # Some subclasses will have initialized this already. 
         if not hasattr(self, "keywords"):
-            self.ketwords = []
+            self.keywords = []
 
-        
+        if not hasattr(self, "card_name_short"):
+            self.card_name_short = self.card_name
+
 
     # In the future, variable costs may become relevant. 
     # This property will interface with that code
