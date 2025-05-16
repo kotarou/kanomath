@@ -1,5 +1,5 @@
 from __future__ import annotations
-from .card import WizardNAA
+from .card import WizardInstant, WizardNAA
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -26,6 +26,21 @@ class CinderingForesight(WizardNAA):
         self.cost = 0 
         self.block = 2
         WizardNAA.__init__(self, owner, zone, colour = colour)
+
+    def on_play(self):
+        # One of the only cards that cares about its colour in its resolution
+        # opt some amount
+        # amp 1 (kind of)
+        pass    
+    
+class Kindle(WizardInstant):
+
+    card_name = "Kindle"
+
+    def __init__(self, owner: Player2, zone: str):
+        self.cost = 0 
+        self.colour = "red"
+        WizardInstant.__init__(self, owner, zone)
 
     def on_play(self):
         # One of the only cards that cares about its colour in its resolution

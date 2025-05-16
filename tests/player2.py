@@ -187,3 +187,52 @@ class TestCard2:
 
         assert player.deck.size == deck_test_size
         assert player.braino.state == "topdeck_combo"
+
+
+    def test_opt_combo(self):
+        
+        player = Player2()
+
+        player.deck.seed_with_cards([           
+            card.Kindle(player, "test"),
+            card.AetherArc(player, "test"),
+            card.BlazingAether(player, "test"),
+            card.EnergyPotion(player, "test"),
+            card.AetherDart(player, "test", "b"),
+            card.AetherQuickening(player, "test", "b"),
+        ])
+
+        deck_test_size = player.deck.size
+
+        player.hand.seed_with_cards([
+            card.AetherWildfire(player, "test"),
+            card.Zap(player, "test", "b"),
+            card.Zap(player, "test", "b"),
+            card.Zap(player, "test", "b")
+        ])
+
+        player.arsenal.seed_with_cards([
+            card.BlazingAether(player, "test"),
+        ])
+
+        player.braino.turn_evaluate_state()
+
+        player.braino.state = "topdeck_combo"
+        player.opt(3)
+        
+        print(player.deck.cards)
+
+        assert player.deck.cards[0].card_name == "Kindle"
+        assert player.deck.cards[1].card_name == "Blazing Aether"
+        assert player.deck.cards[2].card_name == "Aether Arc"
+
+        assert player.braino.topdeck_actions[0] == "draw"
+        assert player.braino.topdeck_actions[1] == "kano"
+        assert player.braino.topdeck_actions[2] == "draw"
+        
+
+        assert player.deck.size == deck_test_size
+        assert player.braino.state == "topdeck_combo"
+
+
+

@@ -37,7 +37,7 @@ class Player2:
     amp = 0
 
     # Equipment status
-    rags_activated = True
+    rags_activated = False
     chestpiece_activated = False
     stormies_activated = False
     nodes_activated = False
@@ -251,10 +251,10 @@ class Braino:
                 # So lets continue to set up
 
                 # Firstly, lets get potions to the top so we can kano them
-                pots, opt_cards = self.opt_top_potions(opt_cards)
+                pots = self.opt_top_potions(opt_cards)
                 
                 # Then lets get relevant combo pieces to the top
-                combo_pieces, opt_cards = self.opt_top_combo(opt_cards)
+                combo_pieces = self.opt_top_combo(opt_cards)
 
                 # Finally, lets put spindle at the top because we might be able to combo with it later
                 # We only want one spindle: two is too many in general (as we want to kano a potion we see from the spindle, so we don't want to kano twice into two spindleS)
@@ -274,7 +274,7 @@ class Braino:
                     return pots + combo_pieces + [spindle], opt_cards
             
             if pitch_needed_to_combo < 1 and not self.player.is_player_turn:
-                print("  Entering 'fuck it lets go' section")
+                print("  Entering 'end setup, fuck it lets go' section")
                 # The conditions under which a cheeky combo could become possible
 
                 if see_wf_fix_hand or see_blazing_fix_hand or see_lesson_fix_hand:
@@ -329,7 +329,7 @@ class Braino:
                         print(f" 4 - top:{top}")
 
                     # After these, we can put any interesting combo cards to the top
-                    combo_pieces, opt_cards = self.opt_top_combo(opt_cards, self.combo_extenders)
+                    combo_pieces = self.opt_top_combo(opt_cards, self.combo_extenders)
                     top.extend(combo_pieces)
                     print(f" 5 - top:{top}")
                     assume_kanos_used += len(combo_pieces)
@@ -377,12 +377,14 @@ class Braino:
         
         # For now, assume that any opt during a cobo is the same as during the topdeck
         elif self.state == "topdeck_combo" or self.state == "combo":
-
+            print("  Entering 'we're alrerady going' section")
             # If we're opting less than the currently known topdeck details, just pass
             opt_leave_num = min(len(opt_cards), len(self.topdeck_actions))
 
             if opt_leave_num == len(opt_cards):
                 return opt_cards, []
+
+            print(f"    Pre-opt, we're expecting to ignore the first {opt_leave_num} cards of the opt")
 
             opt_cards_top   = opt_cards[:opt_leave_num]      
             opt_cards_bot   = opt_cards[opt_leave_num:]
@@ -393,8 +395,11 @@ class Braino:
 
             # We draw 1 off rags, and one per kindle
             opt_draws_already_allocated = self.topdeck_actions.count("draw")
-            combo_draws_cards = 1 if not self.player.rags_activated else 0
+            combo_draws_cards = 0 if self.player.rags_activated else 1
             combo_draws_cards += self.count_kindles
+            combo_draws_including_opt = combo_draws_cards
+
+            print(f"    Pre-opt, we're expecting to draw {combo_draws_cards} cards this combo")
 
             for i in range(len(opt_cards_top)):
                 card = opt_cards_top[i]
@@ -405,41 +410,67 @@ class Braino:
                 # For ease of implementation, lets assume that decision was correct
                 # TODO: Could investgate this assumption as a sanity check
                 if card.card_name in self.combo_draw_2 and action != "draw":
-                    combo_draws_cards += 2
+                    combo_draws_including_opt += 2
                 elif card.card_name in self.combo_draw_1 and action != "draw":
-                    combo_draws_cards += 1
+                    combo_draws_including_opt += 1
 
                 # A kindle we'll draw will mean we draw another card this turn
                 # A kindle  we're not drawing needs to be in the other awway
                 if card.card_name == "Kindle":
-                    if action == "draw":
-                        combo_draws_cards += 1
-                    else:
-                        raise Exception("A kindle is assigned to be kano'd, or is otherwise blind, in the section of opt we accume to know")
+                    combo_draws_including_opt += 1
             
+            print(f"    Considering opt, we're now expecting to draw {combo_draws_including_opt} cards this combo")
+
+            kindles = remove_all_matching(opt_cards_bot, match_card_name("Kindle"))
+
+            if combo_draws_cards > 0:
+                print(f"      As we are drawing cards, putting{len(kindles)} to top of opt")
+                for kindle in kindles:
+                    opt_cards_top.append(kindle)
+                    self.topdeck_actions.append("draw")
+
+            print(f"    Post kindles, top: {opt_cards_top}, bot: {opt_cards_bot}")
+
+
+            # if combo_draws_including_opt <= opt_draws_already_allocated and len(opt_cards_bot) > 0:
+                
+            # Lets put combo extenders to top
+            # TODO: consider player pitch availble (urgh) to see if floodgates is actually appropriate
+            extenders = self.opt_top_combo_extenders(opt_cards_bot)
+
+            for card in extenders:
+                opt_cards_top.append(card)
+                self.topdeck_actions.append("kano")
+
+            print(f"    Post extenders, top: {opt_cards_top}, bot: {opt_cards_bot}")
+
+
+            # As well as super important kano pieces
+            blazings = remove_all_matching(opt_cards_bot, match_card_name("Blazing Aether"))
+
+            for card in blazings:
+                opt_cards_top.append(card)
+                self.topdeck_actions.append("kano")
+
+            print(f"    Post blazings, top: {opt_cards_top}, bot: {opt_cards_bot}")
+
+
             # Allocate blues for those draws
             # TODO: proactively try to draw kindle into another blue
-            if combo_draws_cards > opt_draws_already_allocated:
+            if combo_draws_including_opt > opt_draws_already_allocated:
                 draws_unaccounted = combo_draws_cards - opt_draws_already_allocated
                 # TODO: implement logic for when gaze the ages is better to kano, then draw
                 # Chances are thats rare if we're this deep into the method though, we're opting lots to get here
-                blues = remove_all_matching(opt_cards, card_is_blue)
-
+                blues = remove_all_matching(opt_cards_bot, card_is_blue)
+                print(f"    With blues removed, top: {opt_cards_top}, bot: {opt_cards_bot}, blues: {blues}")
+                
                 for i in range(draws_unaccounted):
                     if i < len(blues):
                         opt_cards_top.append(blues[i])
                         self.topdeck_actions.append("draw")
                         opt_draws_already_allocated += 1
-            
-            if combo_draws_cards <= opt_draws_already_allocated and len(opt_cards_bot) > 0:
-                # Finally, lets put combo extenders to top
 
-                # TODO: consider player pitch availble (urgh) to see if floodgates is actually appropriate
-                extenders, opt_cards_bot = self.opt_top_combo_extenders(opt_cards_bot)
-
-                for card in extenders:
-                    opt_cards_top.append(card)
-                    self.topdeck_actions.append("kano")
+            print(f"    Post draw allocations, top: {opt_cards_top}, bot: {opt_cards_bot}")
 
             return opt_cards_top, opt_cards_bot
         
@@ -448,7 +479,7 @@ class Braino:
 
         return opt_cards, []
 
-    def opt_top_potions(self, opt_cards:list[Card2]) -> tuple[list[Card2], list[Card2]]:                
+    def opt_top_potions(self, opt_cards:list[Card2]) -> list[Card2]:                
         # Potion priorities are normally simple, epot > dpot > cpot
         # There are edge cases: dpot #1 is maybe better than epot #3, and cpot #1 is better than dpot#2 
         #   Although access to will of arcana or eye complicates that further
@@ -460,9 +491,9 @@ class Braino:
         pot_order = ["epot", "dpot", "cpot"]
         pots.sort(key= lambda x: pot_order.index(x.card_name_short))
 
-        return pots, opt_cards
+        return pots
     
-    def opt_top_combo(self, opt_cards:list[Card2], target_cards:list[str] = []) -> tuple[list[Card2], list[Card2]]: 
+    def opt_top_combo(self, opt_cards:list[Card2], target_cards:list[str] = []) -> list[Card2]: 
             
         # We get passed a list of cards we want for the combo
         if not len(target_cards):
@@ -480,9 +511,9 @@ class Braino:
         
         top =  remove_all_matching(opt_cards, match_card_name(target_cards))
 
-        return top, opt_cards
+        return top
 
-    def opt_top_combo_extenders(self, opt_cards:list[Card2], target_cards:list[str] = []) -> tuple[list[Card2], list[Card2]]: 
+    def opt_top_combo_extenders(self, opt_cards:list[Card2], target_cards:list[str] = []) -> list[Card2]: 
             
         # We get passed a list of cards we want for the combo
         if not len(target_cards):
@@ -495,4 +526,4 @@ class Braino:
         extender_priority = ["Open the Flood Gates", "Overflow the Aetherwell"]
         top.sort(key= lambda x: extender_priority.index(x.card_name_short) if x in extender_priority else 0)
         
-        return top, opt_cards
+        return top

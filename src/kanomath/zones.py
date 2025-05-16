@@ -110,10 +110,10 @@ class Zone:
 
     def remove_card(self, card) -> Card2:
 
+        # TODO: replace with try cach for value error
         idx = self.cards.index(card)
 
-        if idx == -1:
-            raise Exception(f"Attempting to remove {card} from {self}, but it was not present")
+        # raise Exception(f"Attempting to remove {card} from {self}, but it was not present")
 
         self.cards.remove(card)
         card.zone = ""

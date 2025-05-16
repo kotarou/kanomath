@@ -205,9 +205,11 @@ class WizardNAA(Card2):
         # self.controller.
         pass 
 
-class WizardInstant():
+class WizardInstant(Card2):
     cardClass = "wizard"
     # We don;t bother differentating pearl and 0 block
     block = 0
     cardType = "instant"
 
+    def __init__(self, owner: Player2, zone = "deck", *args, **kwargs):
+        Card2.__init__(self, owner, zone, *args, **kwargs)

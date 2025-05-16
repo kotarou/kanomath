@@ -66,11 +66,12 @@ def remove_all_matching(input: list[T], predicate: function) -> list[T]:
 
     for item in input:
         if predicate(item): # type: ignore
+            print(f"      indicating {item} should be removed")
             r1.append(item)
 
     for item in r1:
+        print(f"      removing {item}")
         input.remove(item)
-
 
     # return r1, input
     return r1
