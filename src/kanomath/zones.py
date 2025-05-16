@@ -61,20 +61,20 @@ class Zone:
             self.cards.append(card)
 
     # Remove some random cards
-    def remove_at_random(self, numToTake: int) -> Card2 | list[Card2]:
-        out = []
+    # def remove_at_random(self, numToTake: int) -> Card2 | list[Card2]:
+    #     out = []
 
-        if numToTake < 1:
-            return out
+    #     if numToTake < 1:
+    #         return out
 
-        numToTake = min(self.size, numToTake)
+    #     numToTake = min(self.size, numToTake)
 
-        for i in range(numToTake):
-            idx = random.randint(0, self.size)
-            card = self.cards[idx]
-            out.append(self.cards.remove(card))
+    #     for i in range(numToTake):
+    #         idx = random.randint(0, self.size)
+    #         card = self.cards[idx]
+    #         out.append(self.cards.remove(card))
 
-        return out
+    #     return out
     
     # While probably not ever needed, these methods help me from the framework for later actions
     # def banish_by_index(self, idxs: list[int]) -> None:
@@ -117,6 +117,7 @@ class Zone:
 
         self.cards.remove(card)
         card.zone = ""
+        card.intent = ""
 
         return card
     
@@ -133,8 +134,7 @@ class Zone:
             self.cards.insert(idx, card)
         
         card.zone = self.zone_name
-
-        
+        card.intent = ""
 
 
 class Deck(Zone):
@@ -240,6 +240,14 @@ class Arsenal(Zone):
 
     zone_name = "arsenal"
     capacity: int
+
+    @property
+    def has_card(self):
+        return self.size > 0
+    
+    # TODO: support multiple arsenals eventually
+    def get_card(self) -> Card2 | None:
+        return self.cards[0] if self.size > 0 else None
 
     def __init__(self, capacity):
         self.capacity = capacity

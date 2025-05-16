@@ -1,5 +1,5 @@
 from __future__ import annotations
-from .card import WizardNAA, determine_arcane_damage
+from .card import CardCyle, WizardNAA, determine_arcane_damage
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -17,7 +17,7 @@ class AetherArc(WizardNAA):
     def on_damage(self):
         pass
 
-class AetherSpindle(WizardNAA):
+class AetherSpindle(WizardNAA, CardCyle):
 
     def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Aether Spindle"
@@ -28,7 +28,7 @@ class AetherSpindle(WizardNAA):
     def on_damage(self):
         pass
 
-class AetherFlare(WizardNAA):
+class AetherFlare(WizardNAA, CardCyle):
 
     def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Aether Flare"

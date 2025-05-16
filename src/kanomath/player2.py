@@ -2,7 +2,7 @@ from kanomath.cards.card import Card2
 from kanomath.cards.potions import POTIONS
 from kanomath.functions import card_is_blue, match_card_name, move_cards_to_zone, remove_all_matching, remove_first_matching
 import kanomath.zones as zone
-
+from functools import reduce
 
 class Player2:
     
@@ -64,6 +64,15 @@ class Player2:
 
         self.braino = Braino(self)
 
+    @property
+    def potential_chest_pitch(self) -> int:
+        if self.braino.use_tunic:
+            return 1 if self.tunic_counters == 3 and not self.chestpiece_activated else 0
+        elif self.braino.use_spellfire:
+            return 1 if not self.chestpiece_activated else 0
+        else:
+            return 0
+    
     def get_zone_by_name(self, zone_name: str) -> zone.Zone:
 
         match zone_name:
@@ -84,6 +93,36 @@ class Player2:
             case _:
                 raise Exception(f"Attempting to access zone that doesn't exist: {zone_name}")
     
+    def get_card_by_intent(self, intent:str) -> Card2 | None:
+
+        if self.arsenal.has_card:
+            if self.arsenal.get_card().intent == intent: # type: ignore
+                return self.arsenal.get_card() # type: ignore
+        
+        for card in self.hand.cards:
+            if card.intent == intent:
+                return card
+    
+        return None
+       
+    def get_cards_by_intent(self, intent:str) -> list[Card2]:
+
+        output = list[Card2]()
+
+        if self.arsenal.has_card:
+            if self.arsenal.get_card().intent == intent: # type: ignore
+                output.append(self.arsenal.get_card()) # type: ignore
+        
+        for card in self.hand.cards:
+            if card.intent == intent:
+                output.append(card)
+    
+        return output     
+
+    def get_pitch_intent(self) -> int:
+
+        return reduce(lambda result, card: result + card.pitch, self.get_cards_by_intent("pitch"), 0) 
+
     def access_to_card_name(self, card_name: str, allow_banish: bool = True) -> bool:
         return self.hand.contains_card_name(card_name) or self.arsenal.contains_card_name(card_name) or (allow_banish and self.banish.contains_card_name(card_name))
 
@@ -97,14 +136,6 @@ class Player2:
 
         self.pitch_floating += num_resources
 
-    @property
-    def potential_chest_pitch(self) -> int:
-        if self.braino.use_tunic:
-            return 1 if self.tunic_counters == 3 and not self.chestpiece_activated else 0
-        elif self.braino.use_spellfire:
-            return 1 if not self.chestpiece_activated else 0
-        else:
-            return 0
         
     def opt(self, opt_num: int) -> None:
         opt_cards = self.deck.opt(opt_num)
@@ -113,6 +144,37 @@ class Player2:
         print(f"  Then, putting {opt_top} to top and {opt_bot} to bottom.")
 
         self.deck.de_opt(opt_top, opt_bot)
+
+    def kano(self):
+        
+        if self.pitch_floating < 3:
+            raise Exception(f"Attempting to kano with {self.pitch_floating} resources. Need 3.")
+
+        self.pitch_floating -= 3
+        print("Yo wassup")
+
+
+    def play_opponent_turn(self):
+
+        num_kanos = self.braino.kanos_dig_opponent_turn
+
+        pitch_cards = self.get_cards_by_intent("pitch")
+        pitch_cards.sort(key = lambda x : x.pitch, reverse=True)
+
+        running_pitch = 0
+        while(running_pitch < num_kanos * 3):
+            running_sub_pitch = 0
+            while(running_sub_pitch < 3):
+                if len(pitch_cards):
+                    card = pitch_cards.pop(0)
+                    gained_pitch =  card.on_pitch()
+                    running_sub_pitch += gained_pitch
+                    running_pitch += gained_pitch
+                else:
+                    raise Exception(f"Somehow, trying to get more pitch when out of pitch cards. ")
+            
+            self.kano()
+
 
 # Braino is responsible for all player decisions
 # In theory, braino should play optimally based on some constraints on "personality"
@@ -132,6 +194,8 @@ class Braino:
 
     combo_draw_2        = ["Open the Flood Gates", "Tome of Aetherwind", "Tome of Fyendal"]
     combo_draw_1        = []
+
+    num_kanos_possible: int
 
     def __init__(self, player: Player2):
 
@@ -186,9 +250,8 @@ class Braino:
         self.count_kindles      = self.player.count_combo_access_card("Kindle", allow_banish = False)
         self.hand_kindle_count  = self.player.hand.count_cards_name("Kindle")
 
-
-
         self.topdeck_actions = []
+        self.kanos_dig_opponent_turn = 0
 
     @property
     def hand_usable_pitch(self) -> int:
@@ -527,3 +590,137 @@ class Braino:
         top.sort(key= lambda x: extender_priority.index(x.card_name_short) if x in extender_priority else 0)
         
         return top
+    
+    def cycle_make_initial_decisions(self):
+
+        # Eventually decisions here will be made based on opponent actions
+
+        # Decision tree here is simple
+        # First, any cards that _have_ to be held for the combo are set aside
+
+        # We identify any cards that would be good to arsenal, and if we can clear out the arsenal at action speed next turn
+
+        # Then, we assess any interesting action speed plays
+        #   - play a potion
+        #   - play aether spindle with 2 blues in hand to find and kano potions
+        #   - play aether flare with 2 blues in hand to push damage
+        #   - play lesson in lava to hunt for a combo piece
+
+        # We then use spare resources to kano in their turn
+        # This could change our evaluations of what to do in our turn
+        #   - We play out potions, spindles, flares, sonic boom, tome of aetherwind
+        #   - We banish zaps and leave them there
+        #   - We get sad on bricks
+        #   - If we see a relevant combo pieces, we either:
+        #       - Swith to comboing if its relevant
+        #       - Leave it on top for next turn
+
+        # We then allow their turn to end, and execute ours
+
+        pitch_to_hold   = 0
+
+        action_play_priority    = ["Energy Potion", "Potion of Deja Vu", "Aether Spindle", "Clarity Potion", "Lesson in Lava", "Aether Flare"]
+        # TODO: consider arsenalling blazing
+        arsenal_target_priority = ["Aether Wildfire", "Kindle", "Energy Potion", "Potion of Deja Vu", "Lesson in Lava", "Aether Spindle", "Aether Flare", "Cindering Foresight"]
+        arsenal_combo_pieces    = ["Aether Wildfire", "Kindle"]
+        cards_to_hold           = ["Aether Wildfire", "Kindle", "Energy Potion", "Blazing Aether", "Lesson in Lava", "Potion of Deja Vu"]
+
+        spindle_optimal_pitch  = 6
+        flare_optimal_pitch    = 5
+        
+        spindle_minimum_pitch  = 3
+        flare_minimum_pitch    = 5
+
+        card_play_options       = list[Card2]()
+        card_arsenal_options    = list[Card2]()
+        card_hold_options       = list[Card2]()
+
+        # We don't want to play lesson if we have the combo pieces already
+        if self.has_wf:
+            action_play_priority.remove("Lesson in Lava")
+
+        # We might want to play the arsenal out
+        if self.player.arsenal.has_card:
+            arsenal_card = self.player.arsenal.get_card()
+
+            if arsenal_card is not None and arsenal_card.card_name in action_play_priority:
+                card_play_options.append(arsenal_card)
+            
+        # We might want to play or arsenal a card in hand
+        for hand_card in self.player.hand.cards:
+            if hand_card.card_name in arsenal_target_priority:
+                card_arsenal_options.append(hand_card)
+            
+            if hand_card.card_name in action_play_priority:
+                card_play_options.append(hand_card)
+
+        # Sort the arrays, such that the leftmost is the card we most want
+        card_play_options.sort(key=lambda x: action_play_priority.index(x.card_name))
+        card_arsenal_options.sort(key=lambda x: arsenal_target_priority.index(x.card_name))
+
+        wants_to_arsenal = len(card_arsenal_options) > 0
+
+        if wants_to_arsenal:
+            if self.player.arsenal.has_card:
+                if arsenal_target_priority.index(self.player.arsenal.get_card().card_name) < arsenal_target_priority.index(card_arsenal_options[0].card_name): # type: ignore
+
+                    # If the arsenal is a higher prioirty than the "best" option, don't arsenal a card
+                    # Unless, we're going to play the arsenal out anyway
+
+                    if len(card_play_options) and card_play_options[0].zone == "arsenal":
+                        card_play_options[0].intent = "play"
+                        card_arsenal_options[0].intent = "arsenal"
+
+                else:
+
+                    # The card in arsenal is a lower priority than one in hand
+                    # Its now our first priority to play
+                    self.player.arsenal.get_card().intent = "play" # type: ignore
+                    card_arsenal_options[0].intent = "arsenal"
+            else:
+                card_arsenal_options[0].intent = "arsenal"
+
+        # Allocate the card to play 
+        if not any(card.intent == "play" for card in card_play_options):
+            card_play_options[0].intent = "play"
+
+        # Note all other cards as hold or pitch as needed
+        for card in self.player.hand.cards:
+            if card.intent != "play" and card.intent != "arsenal":
+                if card.card_name in cards_to_hold:
+                    card.intent = "hold"
+                else:
+                    card.intent = "pitch"
+        
+        action_card = self.player.get_card_by_intent("play")
+        pitch_intent = self.player.get_pitch_intent()
+
+        # Work out how many resources we should be holding
+        if action_card is not None:
+
+            if action_card.card_name == "Aether Spindle":
+                if pitch_intent >= spindle_optimal_pitch:
+                    pitch_to_hold = spindle_optimal_pitch
+                elif pitch_intent > spindle_minimum_pitch:
+                    pitch_to_hold = spindle_minimum_pitch
+                else:
+                    raise Exception(f"Decided on an action to play spindle, but have no way of paying for it")
+        
+            elif action_card.card_name == "Aether Flare":
+                if pitch_intent >= flare_optimal_pitch:
+                    pitch_to_hold = flare_optimal_pitch
+                elif pitch_intent > flare_minimum_pitch:
+                    pitch_to_hold = flare_minimum_pitch
+                else:
+                    raise Exception(f"Decided on an action to play aether flare, but have no way of paying for it")
+                
+            else:
+                pitch_to_hold = action_card.cost
+
+        # Use the rest to kano
+        spare_pitch = pitch_intent - pitch_to_hold
+
+        self.kanos_dig_opponent_turn = spare_pitch // 3
+
+
+

@@ -236,3 +236,109 @@ class TestCard2:
 
 
 
+    def test_decision_1(self):
+        
+        player = Player2()
+
+        player.deck.seed_with_cards([           
+            card.AetherDart(player, "test", "y"),
+            card.AetherDart(player, "test", "y"),
+            card.AetherDart(player, "test", "y"),
+            card.AetherDart(player, "test", "y"),
+            card.EnergyPotion(player, "test"),
+            card.AetherQuickening(player, "test", "b"),
+        ])
+
+        player.hand.seed_with_cards([
+            card.AetherWildfire(player, "test"),
+            card.Zap(player, "test", "b"),
+            card.Zap(player, "test", "b"),
+            card.Zap(player, "test", "b")
+        ])
+
+        player.arsenal.seed_with_cards([
+            card.EnergyPotion(player, "test"),
+        ])
+
+        player.braino.turn_evaluate_state()
+        player.braino.cycle_make_initial_decisions()
+
+        assert player.arsenal.get_card().intent == "play" # type: ignore
+        assert player.hand.cards[0].intent == "arsenal"
+        assert player.hand.cards[1].intent == "pitch"
+        assert player.hand.cards[2].intent == "pitch"
+        assert player.hand.cards[3].intent == "pitch"
+
+        player.play_opponent_turn()
+
+        assert player.hand.size == 1
+        assert player.hand.cards[0].card_name == "Aether Wildfire"
+
+        assert player.braino.kanos_dig_opponent_turn == 3
+
+        
+    def test_decision_2(self):
+        
+        player = Player2()
+
+        player.deck.seed_with_cards([           
+            card.AetherDart(player, "test", "y"),
+        ])
+
+        player.hand.seed_with_cards([
+            card.EnergyPotion(player, "test"),
+            card.EnergyPotion(player, "test"),
+            card.Zap(player, "test", "b"),
+            card.Zap(player, "test", "b")
+        ])
+
+        player.arsenal.seed_with_cards([
+            card.AetherWildfire(player, "test")
+        ])
+
+        player.braino.turn_evaluate_state()
+        player.braino.cycle_make_initial_decisions()
+
+        assert player.arsenal.get_card().intent != "play" # type: ignore
+        assert player.hand.cards[0].intent != player.hand.cards[1].intent
+        assert player.hand.cards[0].intent in ["play", "hold"]  
+        assert player.hand.cards[1].intent in ["play", "hold"] 
+
+        assert player.hand.cards[2].intent == "pitch"
+        assert player.hand.cards[3].intent == "pitch"
+
+        assert player.braino.kanos_dig_opponent_turn == 2
+
+
+    def test_decision_3(self):
+        
+        player = Player2()
+
+        player.deck.seed_with_cards([           
+            card.AetherDart(player, "test", "y"),
+            card.AetherDart(player, "test", "y"),
+            card.AetherDart(player, "test", "y"),
+            card.AetherDart(player, "test", "y"),
+        ])
+
+        player.hand.seed_with_cards([
+            card.AetherSpindle(player, "test", "r"),
+            # card.EnergyPotion(player, "test"),
+            card.Zap(player, "test", "b"),
+            card.Zap(player, "test", "b"),
+            card.Zap(player, "test", "b")
+        ])
+
+        player.arsenal.seed_with_cards([
+            card.AetherWildfire(player, "test")
+        ])
+
+        player.braino.turn_evaluate_state()
+        player.braino.cycle_make_initial_decisions()
+
+        assert player.hand.cards[0].intent == "play"
+        assert player.hand.cards[1].intent == "pitch"
+        assert player.hand.cards[2].intent == "pitch"
+        assert player.hand.cards[3].intent == "pitch"
+
+        assert player.braino.kanos_dig_opponent_turn == 1

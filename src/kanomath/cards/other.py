@@ -1,5 +1,5 @@
 from __future__ import annotations
-from .card import WizardInstant, WizardNAA
+from .card import CardCyle, WizardInstant, WizardNAA
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -19,7 +19,7 @@ class GazeTheAges(WizardNAA):
         # If player has played another wizard NAA, go to hand
         pass
 
-class CinderingForesight(WizardNAA):
+class CinderingForesight(WizardNAA, CardCyle):
 
     def __init__(self, owner: Player2, zone: str, colour: str = "r"):
         self.card_name = "Cindering Foresight"

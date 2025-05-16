@@ -17,7 +17,8 @@ class Card:
     subType: str
     cardClass: str = "wizard"
 
-    
+    intent: str = ""
+
     arcaneDamage: int
 
     @property
@@ -25,21 +26,27 @@ class Card:
         # TODO: blazing aether, scour
         return self.arcaneDamage > 0
 
-
-
-
     def __str__(self):
+
+        str = f""
+
         match self.pitch:
             case 0:
-                return f"{Fore.grey}{self.cardName}{Style.reset}"
+                str += f"{Fore.grey}{self.cardName}"
             case 1:
-                return f"{Fore.red}{self.cardName} ({self.pitch}){Style.reset}"
+                str += f"{Fore.red}{self.cardName} ({self.pitch})"
             case 2:
-                return f"{Fore.yellow}{self.cardName} ({self.pitch}){Style.reset}"
+                str += f"{Fore.yellow}{self.cardName} ({self.pitch})"
             case 3:
-                return f"{Fore.blue}{self.cardName} ({self.pitch}){Style.reset}"                
+                str += f"{Fore.blue}{self.cardName} ({self.pitch})"                
             case _:
-                return f"{self.cardName} ({self.pitch}){Style.reset}"
+                str += f"{self.cardName} ({self.pitch})"
+
+        str += Style.reset
+        
+        if self.intent != "":
+            str += f", [{self.intent}]"
+        return str
 
     def __repr__(self):
         return self.__str__()

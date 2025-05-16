@@ -85,16 +85,30 @@ class Card2:
     # Card details that are later controlled with getter and setter functions for whatever reason
     # _cost: int
     cost: int
-    _colour: str
 
+    # Properties that classes may override
     keywords: list[str]
+    
+    # Special property for tracking what we plan to do with a card
+    intent: str = ""
 
     # When we play the card, where will it resolve to?
     resolve_to_zone = "discard"
 
     # Simple coloured detail of the card
+
     def __str__(self):
-        return f"{print_colour(self.colour)}{self.card_name} ({self.pitch}){Style.reset}"
+
+        str = print_colour(self.colour) + self.card_name
+
+        if self.is_rainbow:
+            str += f"({self.pitch})"
+
+        str += Style.reset
+        
+        if self.intent != "":
+            str += f" [{self.intent}]"
+        return str
 
     def __repr__(self):
         return self.__str__()
@@ -115,6 +129,9 @@ class Card2:
 
         if not hasattr(self, "card_name_short"):
             self.card_name_short = self.card_name
+
+        if not hasattr(self, "is_rainbow"):
+            self.is_rainbow = False
 
 
     # In the future, variable costs may become relevant. 
@@ -147,8 +164,10 @@ class Card2:
         move_card_to_zone(self, self.resolve_to_zone)
         pass
 
-    def on_pitch(self):
-        pass
+    def on_pitch(self) -> int:
+        move_card_to_zone(self, "pitch")
+        self.controller.pitch_floating += self.pitch
+        return self.pitch
 
 
 class ActivatableNAA(Card2):
@@ -184,6 +203,9 @@ class GenericNAA(Card2):
     cardType = "action"
     cardSubType = ""
 
+class CardCyle():
+    is_rainbow = True
+
 class WizardNAA(Card2):
     cardClass = "wizard"
     cardType = "action"
@@ -213,3 +235,4 @@ class WizardInstant(Card2):
 
     def __init__(self, owner: Player2, zone = "deck", *args, **kwargs):
         Card2.__init__(self, owner, zone, *args, **kwargs)
+

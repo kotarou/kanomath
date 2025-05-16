@@ -1,5 +1,5 @@
 from __future__ import annotations
-from .card import WizardNAA, determine_arcane_damage, determine_pitch, ActivatableNAA
+from .card import CardCyle, WizardNAA, determine_arcane_damage, determine_pitch, ActivatableNAA
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -20,7 +20,7 @@ class BlazingAether(WizardNAA):
         pass
 
 # TODO: This can inherit the class of effects of InstantDiscard
-class ArcaneTwining(WizardNAA, ActivatableNAA):
+class ArcaneTwining(WizardNAA, ActivatableNAA, CardCyle):
 
     card_name = "Arcane Twining"
     cost = 0
@@ -37,7 +37,7 @@ class ArcaneTwining(WizardNAA, ActivatableNAA):
         pass
 
 
-class PhotonSplicing(WizardNAA):
+class PhotonSplicing(WizardNAA, CardCyle):
     
     def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Photon Splicing"
@@ -52,7 +52,7 @@ class PhotonSplicing(WizardNAA):
         pass
 
 
-class AetherDart(WizardNAA):
+class AetherDart(WizardNAA, CardCyle):
     
     def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Aether Dart"
@@ -60,7 +60,7 @@ class AetherDart(WizardNAA):
         self.cost = 0       
         WizardNAA.__init__(self, owner, zone, colour = colour)
 
-class EmeritusScolding(WizardNAA):
+class EmeritusScolding(WizardNAA, CardCyle):
 
     def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Emeritus Scolding"
@@ -72,7 +72,7 @@ class EmeritusScolding(WizardNAA):
         # In some way handle threatening more damage in their turn
         pass
 
-class ScaldingRain(WizardNAA):
+class ScaldingRain(WizardNAA, CardCyle):
     
     def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Scalding Rain"
@@ -80,7 +80,7 @@ class ScaldingRain(WizardNAA):
         self.cost = 1       
         WizardNAA.__init__(self, owner, zone, colour = colour)
 
-class VolticBolt(WizardNAA):
+class VolticBolt(WizardNAA, CardCyle):
     
     def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Voltic Bolt"
@@ -88,7 +88,7 @@ class VolticBolt(WizardNAA):
         self.cost = 2      
         WizardNAA.__init__(self, owner, zone, colour)
 
-class Zap(WizardNAA):
+class Zap(WizardNAA, CardCyle):
     
     card_name = "Zap"
 
@@ -97,7 +97,7 @@ class Zap(WizardNAA):
         self.cost = 0       
         WizardNAA.__init__(self, owner, zone, colour = colour)
 
-class Singe(WizardNAA):
+class Singe(WizardNAA, CardCyle):
     
     def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Singe"

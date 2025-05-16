@@ -1,5 +1,5 @@
 from __future__ import annotations
-from .card import WizardNAA, determine_arcane_damage
+from .card import CardCyle, WizardNAA, determine_arcane_damage
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -66,7 +66,7 @@ class MindWarp(SurgeNAA):
         pass
 
 
-class Overflow(SurgeNAA):
+class Overflow(SurgeNAA, CardCyle):
 
     def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Overflow the Aetherwell"
@@ -77,7 +77,7 @@ class Overflow(SurgeNAA):
     def on_surge(self):
         pass
 
-class Prognosticate(SurgeNAA):
+class Prognosticate(SurgeNAA, CardCyle):
 
     def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Prognosticate"
@@ -88,7 +88,7 @@ class Prognosticate(SurgeNAA):
     def on_surge(self):
         pass
 
-class FloodGates(SurgeNAA):
+class FloodGates(SurgeNAA, CardCyle):
 
     def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Open the Flood Gates"
@@ -99,7 +99,7 @@ class FloodGates(SurgeNAA):
     def on_surge(self):
         pass
 
-class AetherQuickening(SurgeNAA):
+class AetherQuickening(SurgeNAA, CardCyle):
 
     def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Aether Quickening"
@@ -110,7 +110,7 @@ class AetherQuickening(SurgeNAA):
     def on_surge(self):
         pass
 
-class TrailblazingAether(SurgeNAA):
+class TrailblazingAether(SurgeNAA, CardCyle):
 
     def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Trailblazing Aether"
@@ -132,7 +132,7 @@ class DestructiveAethertide(SurgeNAA):
     def on_surge(self):
         pass
 
-class PerennialAetherBloom(SurgeNAA):
+class PerennialAetherBloom(SurgeNAA, CardCyle):
 
     def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Perennial AetherBloom"
@@ -143,7 +143,7 @@ class PerennialAetherBloom(SurgeNAA):
     def on_surge(self):
         pass
 
-class PopTheBubble(SurgeNAA):
+class PopTheBubble(SurgeNAA, CardCyle):
 
     def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Pop the Bubble"
@@ -154,7 +154,7 @@ class PopTheBubble(SurgeNAA):
     def on_surge(self):
         pass
 
-class Sap(SurgeNAA):
+class Sap(SurgeNAA, CardCyle):
 
     def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Sap"
@@ -166,7 +166,7 @@ class Sap(SurgeNAA):
         pass
 
 
-class EtchingsOfArcana(SurgeNAA):
+class EtchingsOfArcana(SurgeNAA, CardCyle):
 
     def __init__(self, owner: Player2, zone: str, colour: str = "b"):
         self.card_name = "Etchings of Arcana"

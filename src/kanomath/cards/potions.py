@@ -14,6 +14,7 @@ POTIONS = ["Energy Potion", "Potion of Deja Vu", "Clarity Potion"]
 class Potion(ActivatableNAA):
 
     block = 0
+    cost = 0
     card_class = "generic"
 
     resolve_to_zone = "arena"
