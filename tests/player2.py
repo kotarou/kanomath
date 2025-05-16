@@ -342,3 +342,62 @@ class TestCard2:
         assert player.hand.cards[3].intent == "pitch"
 
         assert player.braino.kanos_dig_opponent_turn == 1
+
+    def test_kano_play_epot(self):
+        
+        player = Player2()
+
+        player.deck.seed_with_cards([           
+            card.EnergyPotion(player, "test")
+        ])
+
+        # Ensure the player can kano an epot, then play it
+        player.gain_pitch(3)
+        assert player.pitch_floating == 3
+        player.kano()
+        assert player.pitch_floating == 0
+
+        # print(player.deck.cards)
+
+        # Ensure the potion went ot the correct place
+        assert player.card_name_in_zone("Energy Potion", "arena")
+        assert player.arena.size == 1
+        assert player.banish.size == 0
+        assert player.deck.size == 0
+        assert player.discard.size == 0
+    
+    def test_play_spindle(self):
+        
+        player = Player2()
+
+        player.deck.seed_with_cards([           
+            card.AetherDart(player, "test", "r"),
+            card.EnergyPotion(player, "test"),
+            card.AetherWildfire(player, "test"),
+            card.SonicBoom(player, "test"),    
+            card.AetherDart(player, "test", "y"),
+            card.AetherDart(player, "test", "b"),               
+        ])
+
+        player.hand.seed_with_cards([
+            card.AetherSpindle(player, "test", "r"),
+            card.Zap(player, "test", "b"),
+            card.Zap(player, "test", "b"),
+            card.Zap(player, "test", "b")
+        ])
+
+        player.braino.turn_evaluate_state()
+        player.braino.cycle_make_initial_decisions()
+
+        assert player.hand.cards[0].intent == "play"
+        assert player.hand.cards[1].intent == "pitch"
+        assert player.hand.cards[2].intent == "pitch"
+        assert player.hand.cards[3].intent == "pitch"
+
+        assert player.braino.kanos_dig_opponent_turn == 1
+
+        # Pretend we played the spindle
+        player.opt(5)
+
+        # print(player.deck)
+        assert False

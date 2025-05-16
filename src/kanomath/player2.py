@@ -1,6 +1,7 @@
-from kanomath.cards.card import Card2
+from kanomath.cards.card import COMBO_CORE, COMBO_EXTENDERS, Card2
 from kanomath.cards.potions import POTIONS
-from kanomath.functions import card_is_blue, match_card_name, move_cards_to_zone, remove_all_matching, remove_first_matching
+import typing
+from kanomath.functions import card_is_blue, match_card_name, move_card_to_zone, move_cards_to_zone, remove_all_matching, remove_first_matching
 import kanomath.zones as zone
 from functools import reduce
 
@@ -93,6 +94,11 @@ class Player2:
             case _:
                 raise Exception(f"Attempting to access zone that doesn't exist: {zone_name}")
     
+    def card_name_in_zone(self, card_name: str, zone_name: str) -> bool:
+
+        zone = self.get_zone_by_name(zone_name)
+        return zone.contains_card_name(card_name)
+
     def get_card_by_intent(self, intent:str) -> Card2 | None:
 
         if self.arsenal.has_card:
@@ -142,6 +148,8 @@ class Player2:
         print(f"Seeing {opt_cards} when opting {opt_num}")
         opt_top, opt_bot = self.braino.resolve_opt(opt_cards)
         print(f"  Then, putting {opt_top} to top and {opt_bot} to bottom.")
+        print(f"  {len(self.braino.topdeck_actions)} card(s) on top of deck will be acted on this turn, with action(s): {self.braino.topdeck_actions}.")
+
 
         self.deck.de_opt(opt_top, opt_bot)
 
@@ -150,8 +158,56 @@ class Player2:
         if self.pitch_floating < 3:
             raise Exception(f"Attempting to kano with {self.pitch_floating} resources. Need 3.")
 
+        if self.deck.size == 0:
+            raise Exception(f"Kanoing on an empty deck.")
+        
+        if len(self.braino.topdeck_actions) and self.braino.topdeck_actions[0] != "kano":
+            raise Exception(f"Attempting to kano when the correct topdeck action is {self.braino.topdeck_actions[0]}.")
+
         self.pitch_floating -= 3
-        print("Yo wassup")
+
+        card = typing.cast(Card2, self.deck.peek())
+
+        action = self.braino.decide_kano_result(card)
+
+        print(f"Braino has decided to {action} the {card}.")
+
+        if action == "brick":
+            # We could set num_kanos to 0 here to stop kanoing
+            # But contonueing to kano into bricks allows for more hand cycling
+            return
+        
+        elif action == "assess_combo":
+            # We might be able to go off with this card
+            # TODO: implement this
+            # For now, assume seeing a combo piece in this situation is just a brick
+            return
+    
+        elif action == "banish":
+            # Just banish the card and ignore it
+            move_card_to_zone(card, "banish")
+
+        elif action == "play":
+            move_card_to_zone(card, "banish")
+            self.play_card(card, as_instant=True)
+
+        else:
+            raise Exception(f"Attempted to resolve a kano with an illegal outcome ({action}).")
+
+    def play_card(self, card: Card2, as_instant = False):
+
+        # For now not particularly considered, nor fully implemented
+        # TODO: card controller & owner
+        # if card.controller != self.id:
+        #     raise Exception("Attempting to play a card we do not control ({card.controller} != {self.id})")
+        
+        if card.card_type == "action" and not as_instant and (self.action_points == 0 or self.is_player_turn == False):
+            raise Exception(f"Attempting to play an action when disallowed (Player turn: {self.is_player_turn}, AP: {self.action_points}, as_instant: {as_instant})")
+
+        card.on_play()
+
+        if card.card_class == "wizard" and card.card_type == "action":
+            self.wizard_naa_played += 1
 
 
     def play_opponent_turn(self):
@@ -194,6 +250,8 @@ class Braino:
 
     combo_draw_2        = ["Open the Flood Gates", "Tome of Aetherwind", "Tome of Fyendal"]
     combo_draw_1        = []
+
+    topdeck_actions     = []
 
     num_kanos_possible: int
 
@@ -279,7 +337,7 @@ class Braino:
 
     def resolve_opt(self, opt_cards:list[Card2]) -> tuple[list[Card2], list[Card2]]:
 
-        print("Entering opt method")
+        # print("Entering opt method")
 
         # The first thing to check with the opt is whether it exposes information that might change our state
         opt_has_wf      = any(card.card_name == "Aether Wildfire" for card in opt_cards)
@@ -306,10 +364,10 @@ class Braino:
         # If we're setting up, there are two primary outcomes: either we continue to filter top of deck, or we opportunistically go for the combo if we see an integral card
         if self.state == "setup":
 
-            print(f"wf: {see_wf_fix_hand}, blazing: {see_blazing_fix_hand}, lesson: {see_lesson_fix_hand}, pots: {opt_has_potion}")
+            # print(f"wf: {see_wf_fix_hand}, blazing: {see_blazing_fix_hand}, lesson: {see_lesson_fix_hand}, pots: {opt_has_potion}")
 
             if not see_wf_fix_hand and not see_blazing_fix_hand and not see_lesson_fix_hand and opt_has_potion:
-                print("  Entering 'opt saw potion' section")
+                # print("  Entering 'opt saw potion' section")
                 # We can't use this hand to go off on a combo, given the new information
                 # So lets continue to set up
 
@@ -328,8 +386,6 @@ class Braino:
                 # TODO: Likewise, if we see Eye, might be good to leave it on top
 
                 self.topdeck_actions = ["kano"] * len(pots)
-
-
 
                 if spindle is None:
                     return pots + combo_pieces, opt_cards
@@ -413,11 +469,6 @@ class Braino:
 
                     self.state = "topdeck_combo"
                     return top, bottom
-
-                        
-
-
-                pass
 
                 # Strategy here is to put the key card on top
                 # Then, work out how many kanos we can, and want to do
@@ -721,6 +772,32 @@ class Braino:
         spare_pitch = pitch_intent - pitch_to_hold
 
         self.kanos_dig_opponent_turn = spare_pitch // 3
+
+    # Decide what action should be taken with a topdeck card
+    def decide_kano_result(self, card: Card2):
+
+        card_is_brick   = card.card_type != "action"
+
+        if card_is_brick:
+            return "brick"
+
+        card_is_potion  = card.card_name in POTIONS
+        card_is_combo   = card.card_name in COMBO_CORE
+        card_is_extender= card.card_name in COMBO_EXTENDERS
+        
+        if self.state == "setup":
+
+            if card_is_potion:
+                return "play"
+            
+            if card_is_combo or card_is_extender:
+                return "assess_combo"
+        
+        if self.state == "topdeck_combo" or self.state == "combo":
+            return "play"
+        
+        return "banish"
+            
 
 
 

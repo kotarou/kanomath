@@ -25,15 +25,12 @@ class Potion(ActivatableNAA):
 
         super().__init__(owner, zone)
 
-    # def on_play(self):
-    #     self.controller.arena.append(self)
-    #     self.zone = "arena"
+    # We don't even need an onplay method for potions
+    # As they just go to their designated zone (arena)
 
     def on_activate(self):
         ActivatableNAA.on_activate(self)
 
-    #     if self.can_activate:
-    #         move_card_to_zone(self, self.activate_to_zone)
 
 
 

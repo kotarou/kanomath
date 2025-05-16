@@ -79,6 +79,7 @@ class Card2:
     # pitch: int
     block: int
     card_class: str
+    card_type: str
     card_name: str
     card_name_short: str
 
@@ -133,6 +134,8 @@ class Card2:
         if not hasattr(self, "is_rainbow"):
             self.is_rainbow = False
 
+        if not hasattr(self, "card_type"):
+            self.card_type = "naa"
 
     # In the future, variable costs may become relevant. 
     # This property will interface with that code
@@ -169,6 +172,8 @@ class Card2:
         self.controller.pitch_floating += self.pitch
         return self.pitch
 
+COMBO_CORE      = ["Aether Wildfire", "Blazing Aether", "Lesson in Lava"]
+COMBO_EXTENDERS = ["Open the Flood Gates", "Overflow the Aetherwell", "Tome of Aetherwind", "Tome of Fyendal", "Sonic Boom"]
 
 class ActivatableNAA(Card2):
     card_type = "action"
@@ -221,11 +226,8 @@ class WizardNAA(Card2):
 
         Card2.__init__(self, owner, zone, *args, **kwargs)
 
-
     def on_play(self):
-        # Increment the wizardNAA playerd tally for controlling player
-        # self.controller.
-        pass 
+        Card2.on_play(self)
 
 class WizardInstant(Card2):
     cardClass = "wizard"
