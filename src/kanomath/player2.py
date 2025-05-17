@@ -143,12 +143,12 @@ class Player2:
 
         self.pitch_floating += num_resources
     
-    def spend_pitch(self, num_resources: int):
+    def spend_pitch(self, num_resources: int, reason: str = ""):
         
         if num_resources < 0:
-            raise Exception(f"Attempting to spend negative ({num_resources}) pitch. The minimum to spend is 0. ")
+            raise Exception(f"Attempting to spend negative ({num_resources}) pitch on {reason}. The minimum to spend is 0. ")
 
-        self.pitch_floating += num_resources
+        self.pitch_floating -= num_resources
         
     def opt(self, opt_num: int) -> None:
         opt_cards = self.deck.opt(opt_num)
@@ -180,7 +180,7 @@ class Player2:
 
         print(f"  Player activated kano. Pitch {self.pitch_floating} -> {self.pitch_floating - 3}.")
 
-        self.pitch_floating -= 3
+        self.spend_pitch(3, "kano")
 
         card = typing.cast(Card2, self.deck.peek())
 
@@ -231,7 +231,7 @@ class Player2:
 
             # We spend the resources here instead of in the card's play method
             # This avoid an inheritance issue present in earlier code, and also keeps player code in player
-            self.spend_pitch(card.cost)
+            self.spend_pitch(card.cost, card.card_name)
             card.on_play()
             # move_card_to_zone(card, "arsenal")
 
@@ -246,7 +246,7 @@ class Player2:
     def arsenal_card(self, card: Card2):
 
         if self.arsenal.size > 0:
-            raise Exception(f"Attempting to arsenal {card} when {self.arsenal.get_card()} is already in the arsenal (and considers its zone to be {self.arsenal.get_card().zone}).")
+            raise Exception(f"Attempting to arsenal {card} when {self.arsenal.get_card()} is already in the arsenal).")
 
         print(f"  Arsenalling {card}.")
         move_card_to_zone(card, "arsenal")
@@ -317,7 +317,21 @@ class Player2:
             raise Exception(f"Player has indicated more than one action to complete: {potential_action_cards}.")
         
         elif len (potential_action_cards) == 1:
-            self.play_card(potential_action_cards[0])
+
+            potential_card = potential_action_cards[0]
+
+            if self.pitch_floating < potential_card.cost:
+                if potential_card.zone == "hand":
+                    # We can't actually pay for the card, so switch it to a pitch card
+                    print(f"  Player wants to play {potential_card}, but cannot afford it. Pitching instead.")
+                    potential_card.intent = "pitch"
+                    self.pitch_card(potential_card)
+                else:
+                    print(f"  Player is stuck with {potential_card} in arsenal as they can't play it out.")
+                    # Fuck, we're stuck with it turn turn
+                    pass
+            else:
+                self.play_card(potential_action_cards[0])
 
         while self.pitch_floating >= 3:
             self.kano()

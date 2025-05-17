@@ -59,6 +59,7 @@ class Kindle(WizardInstant):
         # One of the only cards that cares about its colour in its resolution
         # opt some amount
         # amp 1 (kind of)
+        WizardInstant.on_play(self)
         pass    
 
 class EyeOfOphidia(Gem):
