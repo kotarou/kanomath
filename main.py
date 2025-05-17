@@ -1,13 +1,14 @@
+from kanomath.game import Game
 from src.kanomath.player import Player
 from src.kanomath.opponent import Opponent
 from src.kanomath.controller import *
 # Eventually import argparse for info
 
-from src.kanomath.cards import EnergyPotion, AetherDart, AetherWildfire, CinderingForesight, Overflow
+# from src.kanomath.cards import EnergyPotion, AetherDart, AetherWildfire, CinderingForesight, Overflow
 
 if __name__ == "__main__":
     
-    player: Player = Player()
+    # player: Player = Player()
     # opponent: Opponent = Opponent()
 
     # setupGame(player, opponent)
@@ -21,15 +22,10 @@ if __name__ == "__main__":
     #     player.simulateOpponentTurn()
     #     cleanUpTurn(player, opponent)
 
-    epot = EnergyPotion(player, "arena")
-    adart = AetherDart(player, "hand")
-    overflow = Overflow(player, "hand", colour = "red")
-    wildfire = AetherWildfire(player, "hand")
-    cindering = CinderingForesight(player, "hand")
+    game: Game  = Game()
 
-    epot.on_play()
-    epot.on_activate()
+    game.setup_game()
 
-    for card in [epot, adart, overflow, wildfire, cindering]:
-        print(f"card {card}, class {card.cardClass}, type {card.cardType}, pitch {card.pitch}, block: {card.block}")
+    game.run_game_machine()
+
 

@@ -1,7 +1,7 @@
+import kanomath.cards as card
 from kanomath.functions import move_cards_between_zones, move_cards_to_zone
 from kanomath.opponent import Opponent
 from kanomath.player2 import Player2
-
 
 class Game:
 
@@ -24,6 +24,92 @@ class Game:
         self.player = Player2()
         self.opponent = Opponent()
 
+        self.player.deck.seed_with_cards([
+            card.AetherFlare(self.player, "test", "red"),
+            card.AetherFlare(self.player, "test", "red"),
+            card.AetherFlare(self.player, "test", "red"),
+
+            card.AetherSpindle(self.player, "test", "red"),
+            card.AetherSpindle(self.player, "test", "red"),
+            card.AetherSpindle(self.player, "test", "red"),
+            
+            card.AetherWildfire(self.player, "test"),
+            card.AetherWildfire(self.player, "test"),
+            card.AetherWildfire(self.player, "test"),
+
+            card.BlazingAether(self.player, "test"),
+            card.BlazingAether(self.player, "test"),
+            card.BlazingAether(self.player, "test"),
+           
+            card.CinderingForesight(self.player, "test", "red"),
+            card.CinderingForesight(self.player, "test", "red"),
+
+            card.Kindle(self.player, "test"),
+            card.Kindle(self.player, "test"),
+            card.Kindle(self.player, "test"),
+
+            card.Overflow(self.player, "test", "red"),
+            card.Overflow(self.player, "test", "red"),
+            card.Overflow(self.player, "test", "red"),
+
+            card.LessonInLava(self.player, "test"),
+            card.LessonInLava(self.player, "test"),
+            card.LessonInLava(self.player, "test"),
+
+            card.Overflow(self.player, "test", "yellow"),
+            card.Overflow(self.player, "test", "yellow"),
+            card.Overflow(self.player, "test", "yellow"),
+
+            card.AetherArc(self.player, "test"),
+            card.AetherArc(self.player, "test"),
+            card.AetherArc(self.player, "test"),
+
+            card.ArcaneTwining(self.player, "test", "blue"),
+            card.ArcaneTwining(self.player, "test", "blue"),
+            card.ArcaneTwining(self.player, "test", "blue"),
+
+            card.DestructiveAethertide(self.player, "test"),
+            card.DestructiveAethertide(self.player, "test"),
+            card.DestructiveAethertide(self.player, "test"),
+
+            card.EnergyPotion(self.player, "test"),
+            card.EnergyPotion(self.player, "test"),
+            card.EnergyPotion(self.player, "test"),
+
+            card.EyeOfOphidia(self.player, "test"),
+
+            card.GazeTheAges(self.player, "test"),
+            card.GazeTheAges(self.player, "test"),
+            card.GazeTheAges(self.player, "test"),
+
+            card.FloodGates(self.player, "test", "blue"),
+            card.FloodGates(self.player, "test", "blue"),
+            card.FloodGates(self.player, "test", "blue"),
+
+            card.Overflow(self.player, "test", "blue"),
+            card.Overflow(self.player, "test", "blue"),
+            card.Overflow(self.player, "test", "blue"),
+
+            card.PopTheBubble(self.player, "test", "blue"),
+            card.PopTheBubble(self.player, "test", "blue"),
+            card.PopTheBubble(self.player, "test", "blue"),
+
+            card.DejaVuPotion(self.player, "test"),
+            card.DejaVuPotion(self.player, "test"),
+
+            card.Prognosticate(self.player, "test", "blue"),
+            card.Prognosticate(self.player, "test", "blue"),
+            card.Prognosticate(self.player, "test", "blue"),
+
+            card.Sap(self.player, "test", "blue"),
+            card.Sap(self.player, "test", "blue"),
+            card.Sap(self.player, "test", "blue"),
+
+            card.WillOfArcana(self.player, "test"),
+        ])
+
+        self.player.deck.shuffle()
+        self.player.hand.draw_up()
 
         # For now
         # TODO: alternate, and track differences
@@ -36,10 +122,11 @@ class Game:
         else:
             self.run_first_turn(self.opponent)
             self.run_player_turn()
-        
+    
         while self.game_should_continue:
-            self.run_opponent_turn()
+            self.run_opponent_turn(False)
             self.run_player_turn()
+            break
 
 
         # Begin with the first turn, which is slightly unusual
@@ -47,23 +134,32 @@ class Game:
     def run_first_turn(self, turn_player: Player2 | Opponent):
 
         if turn_player.id == "player":
+
+            self.player.braino.evaluate_state()
+            self.player.braino.cycle_make_initial_decisions()
+
             self.run_player_turn()
             # TODO: Opponent draw up
         else:
-            self.run_opponent_turn()
+            self.run_opponent_turn(game_first_turn = True)
             # TODO: Player draw up
         self.cleanup_turn()    
 
 
-    def run_opponent_turn(self):
-        # TODO: opponent turn
-
+    def run_opponent_turn(self, game_first_turn):
+        self.player.braino.evaluate_state()
+        self.player.braino.cycle_make_initial_decisions()
+        
+        self.player.play_opponent_turn(game_first_turn)
         self.cleanup_turn()
 
     
     def run_player_turn(self):
+        self.player_num_turns += 1
 
-        # TODO: player turn
+        self.player.braino.evaluate_state()
+        self.player.play_own_turn()
+        
         self.cleanup_turn()
 
 

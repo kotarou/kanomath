@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 from collections import deque
 from typing import Deque
 import random
 import copy
 
-from kanomath.functions import move_card_to_zone
+from kanomath.functions import add_card_to_zone, move_card_to_zone, move_cards_to_zone
 
 from .cards import Card2
 
@@ -14,7 +16,7 @@ if typing.TYPE_CHECKING:
 class Zone:
 
     cards: Deque['Card2']
-    # owner: 'Player2'
+    owner: Player2
     zone_name = ""
 
     def __str__(self):
@@ -29,11 +31,10 @@ class Zone:
         else:
             return str + f"s: {self.cards[0]}, ..., {self.cards[-1]}]"
 
-
-    def __init__(self):
+    def __init__(self, owner: Player2):
     # def __init__(self, owner: 'Player2'):
         
-        # self.owner = owner
+        self.owner = owner
 
         # Some zones will have already constructed this
         if not hasattr(self, "cards"):
@@ -142,9 +143,9 @@ class Deck(Zone):
     opt_incomplete: bool
     zone_name = "deck"
 
-    def __init__(self):
+    def __init__(self, owner):
          self.opt_incomplete = False
-         Zone.__init__(self)
+         Zone.__init__(self, owner)
 
     def draw(self, num_to_take: int = 1) -> Card2 | list[Card2]:
         
@@ -222,10 +223,10 @@ class Hand(Zone):
     zone_name = "hand"
     intellect: int
 
-    def __init__(self, intellect):
+    def __init__(self, owner, intellect):
         self.intellect = intellect
 
-        Zone.__init__(self)
+        Zone.__init__(self, owner)
     
     @property
     def potential_pitch(self) -> int:
@@ -234,7 +235,16 @@ class Hand(Zone):
                 pitch += card.pitch
         return pitch
 
+    def draw_up(self):
 
+        num_to_draw = self.owner.current_intellect - self.size
+        cards = self.owner.deck.draw(num_to_draw)
+
+        if isinstance(cards, list):
+            for card in cards:
+                add_card_to_zone(card, "hand")
+        else:
+            add_card_to_zone(cards, "hand")
 
 class Arsenal(Zone):
 
@@ -249,38 +259,38 @@ class Arsenal(Zone):
     def get_card(self) -> Card2 | None:
         return self.cards[0] if self.size > 0 else None
 
-    def __init__(self, capacity):
+    def __init__(self, owner, capacity):
         self.capacity = capacity
         self.cards = deque(maxlen=self.capacity)
         
-        Zone.__init__(self)
+        Zone.__init__(self, owner)
 
 class Pitch(Zone):
     
     zone_name = "pitch"
 
-    def __init__(self):
-        Zone.__init__(self)
+    def __init__(self, owner):
+        Zone.__init__(self, owner)
 
 class Banish(Zone):
     
     zone_name = "banish"
 
-    def __init__(self):
-        Zone.__init__(self)
+    def __init__(self, owner):
+        Zone.__init__(self, owner)
 
 class Discard(Zone):
     
     zone_name = "discard"
 
-    def __init__(self):
-        Zone.__init__(self)
+    def __init__(self, owner):
+        Zone.__init__(self, owner)
 
 class Arena(Zone):
 
     zone_name = "arena"
     
-    def __init__(self):
-        Zone.__init__(self)
+    def __init__(self, owner):
+        Zone.__init__(self, owner)
 
     

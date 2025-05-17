@@ -38,7 +38,7 @@ class TestCard2:
         assert player.arsenal.contains_card_name("Blazing Aether")
         assert not player.arsenal.contains_card_name("Aether Wildfire")
 
-        player.braino.turn_evaluate_state()
+        player.braino.evaluate_state()
 
         assert player.braino.wf_hand
         assert player.braino.blazing_arsenal
@@ -61,7 +61,7 @@ class TestCard2:
         player.arsenal.seed_with_cards([
             card.AetherWildfire(player, "test"),
         ])
-        player.braino.turn_evaluate_state()
+        player.braino.evaluate_state()
 
         assert player.braino.hand_usable_pitch == 9
 
@@ -71,7 +71,7 @@ class TestCard2:
             card.Zap(player, "test", "b"),
             card.Zap(player, "test", "b")
         ])
-        player.braino.turn_evaluate_state()
+        player.braino.evaluate_state()
 
         # Test the player correctly recognizes that the second wildfire in hand is pitchable, but the blazing still is not
         assert player.braino.wf_arsenal 
@@ -135,7 +135,7 @@ class TestCard2:
             card.BlazingAether(player, "test"),
         ])
 
-        player.braino.turn_evaluate_state()
+        player.braino.evaluate_state()
         assert player.braino.state == "setup"
         # In this case, the player should have opted the enregy potion to top and the two blues to bottom in an order we don't care about
         # They remain in setup because we want that energy potion
@@ -172,7 +172,7 @@ class TestCard2:
             card.BlazingAether(player, "test"),
         ])
 
-        player.braino.turn_evaluate_state()
+        player.braino.evaluate_state()
 
         assert player.braino.state == "setup"
 
@@ -215,7 +215,7 @@ class TestCard2:
             card.BlazingAether(player, "test"),
         ])
 
-        player.braino.turn_evaluate_state()
+        player.braino.evaluate_state()
 
         player.braino.state = "topdeck_combo"
         player.opt(3)
@@ -260,7 +260,7 @@ class TestCard2:
             card.EnergyPotion(player, "test"),
         ])
 
-        player.braino.turn_evaluate_state()
+        player.braino.evaluate_state()
         player.braino.cycle_make_initial_decisions()
 
         assert player.arsenal.get_card().intent == "play" # type: ignore
@@ -296,7 +296,7 @@ class TestCard2:
             card.AetherWildfire(player, "test")
         ])
 
-        player.braino.turn_evaluate_state()
+        player.braino.evaluate_state()
         player.braino.cycle_make_initial_decisions()
 
         assert player.arsenal.get_card().intent != "play" # type: ignore
@@ -333,7 +333,7 @@ class TestCard2:
             card.AetherWildfire(player, "test")
         ])
 
-        player.braino.turn_evaluate_state()
+        player.braino.evaluate_state()
         player.braino.cycle_make_initial_decisions()
 
         assert player.hand.cards[0].intent == "play"
@@ -386,7 +386,7 @@ class TestCard2:
             card.Zap(player, "test", "b")
         ])
 
-        player.braino.turn_evaluate_state()
+        player.braino.evaluate_state()
         player.braino.cycle_make_initial_decisions()
 
         assert player.hand.cards[0].intent == "play"

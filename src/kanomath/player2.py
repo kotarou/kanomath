@@ -52,16 +52,16 @@ class Player2:
 
     def __init__(self):
 
-        self.hand = zone.Hand(self.base_intellect)
-        self.arena = zone.Arena()
-        self.arsenal = zone.Arsenal(self.max_cards_in_arsenal)
-        self.pitch = zone.Pitch()
-        self.discard = zone.Discard()
+        self.hand = zone.Hand(self, self.base_intellect)
+        self.arena = zone.Arena(self)
+        self.arsenal = zone.Arsenal(self, self.max_cards_in_arsenal)
+        self.pitch = zone.Pitch(self)
+        self.discard = zone.Discard(self)
         # We can access cards in banish this turn
-        self.banish = zone.Banish()
+        self.banish = zone.Banish(self)
         # Exiled cards are goneski 
-        self.exile = zone.Banish()
-        self.deck = zone.Deck()
+        self.exile = zone.Banish(self)
+        self.deck = zone.Deck(self)
 
         self.braino = Braino(self)
 
@@ -126,7 +126,6 @@ class Player2:
         return output     
 
     def get_pitch_intent(self) -> int:
-
         return reduce(lambda result, card: result + card.pitch, self.get_cards_by_intent("pitch"), 0) 
 
     def access_to_card_name(self, card_name: str, allow_banish: bool = True) -> bool:
@@ -141,7 +140,13 @@ class Player2:
             raise Exception(f"Attempting to gain {num_resources} pitch. The minimum to gain is 1. ")
 
         self.pitch_floating += num_resources
+    
+    def spend_pitch(self, num_resources: int):
+        
+        if num_resources < 0:
+            raise Exception(f"Attempting to spend negative ({num_resources}) pitch. The minimum to spend is 0. ")
 
+        self.pitch_floating += num_resources
         
     def opt(self, opt_num: int) -> None:
         opt_cards = self.deck.opt(opt_num)
@@ -152,6 +157,13 @@ class Player2:
 
 
         self.deck.de_opt(opt_top, opt_bot)
+
+    def gain_amp(self, amp_num: int):
+
+        if(amp_num < 1):
+            raise Exception(f"Cannot amp less than 1 ({amp_num}).")
+
+        self.amp += 1
 
     def kano(self):
         
@@ -196,40 +208,59 @@ class Player2:
 
     def play_card(self, card: Card2, as_instant = False):
 
-        # For now not particularly considered, nor fully implemented
         # TODO: card controller & owner
+        # For now not particularly considered, nor fully implemented
         # if card.controller != self.id:
         #     raise Exception("Attempting to play a card we do not control ({card.controller} != {self.id})")
         
-        if card.card_type == "action" and not as_instant and (self.action_points == 0 or self.is_player_turn == False):
-            raise Exception(f"Attempting to play an action when disallowed (Player turn: {self.is_player_turn}, AP: {self.action_points}, as_instant: {as_instant})")
+        if card.card_type == "action" and not as_instant:
+            if self.action_points == 0 or self.is_player_turn == False:
+                raise Exception(f"Attempting to play an action when disallowed (Player turn: {self.is_player_turn}, AP: {self.action_points}, as_instant: {as_instant}).")
+            else:
+                self.action_points -= 1
 
-        card.on_play()
+        if self.pitch_floating >= card.cost:
+            # TODO: assess nodes and crucible activations
+            card.on_play()
+
+        else:
+            # TODO: pitch to play the
+            raise Exception(f"Cannot afford {card}, cost ({card.cost}), with {self.pitch_floating} resources floating.")
 
         if card.card_class == "wizard" and card.card_type == "action":
             self.wizard_naa_played += 1
 
 
-    def play_opponent_turn(self):
+    def play_opponent_turn(self, game_first_turn = False):
 
-        num_kanos = self.braino.kanos_dig_opponent_turn
+        # TODO: special handling of first turn opts & etc
+
+        num_kanos_aim       = self.braino.kanos_dig_opponent_turn
+        num_kanos_completed = 0
 
         pitch_cards = self.get_cards_by_intent("pitch")
         pitch_cards.sort(key = lambda x : x.pitch, reverse=True)
 
-        running_pitch = 0
-        while(running_pitch < num_kanos * 3):
-            running_sub_pitch = 0
-            while(running_sub_pitch < 3):
+        while(num_kanos_completed < num_kanos_aim):
+            
+            while(self.pitch_floating < 3):
                 if len(pitch_cards):
                     card = pitch_cards.pop(0)
-                    gained_pitch =  card.on_pitch()
-                    running_sub_pitch += gained_pitch
-                    running_pitch += gained_pitch
+                    card.on_pitch()
                 else:
                     raise Exception(f"Somehow, trying to get more pitch when out of pitch cards. ")
             
+            # TODO: assess maybe comboing based on the kano result
             self.kano()
+            num_kanos_completed += 1
+
+        if game_first_turn:
+            self.hand.draw_up()
+
+    def play_own_turn(self, game_first_turn = False):
+
+
+        pass
 
 
 # Braino is responsible for all player decisions
@@ -265,7 +296,7 @@ class Braino:
 
         pass
 
-    def turn_evaluate_state(self):
+    def evaluate_state(self):
         # Has aether wildfire to begin combo
         self.wf_hand    = self.player.hand.contains_card_name("Aether Wildfire")
         self.wf_arsenal = self.player.arsenal.contains_card_name("Aether Wildfire")

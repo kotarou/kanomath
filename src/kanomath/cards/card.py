@@ -103,7 +103,7 @@ class Card2:
         str = print_colour(self.colour) + self.card_name
 
         if self.is_rainbow:
-            str += f"({self.pitch})"
+            str += f" ({self.pitch})"
 
         str += Style.reset
         
@@ -165,11 +165,12 @@ class Card2:
 
     def on_play(self):
         move_card_to_zone(self, self.resolve_to_zone)
+        self.controller.spend_pitch(self.cost)
         pass
 
     def on_pitch(self) -> int:
         move_card_to_zone(self, "pitch")
-        self.controller.pitch_floating += self.pitch
+        self.controller.gain_pitch(self.pitch)
         return self.pitch
 
 COMBO_CORE      = ["Aether Wildfire", "Blazing Aether", "Lesson in Lava"]
