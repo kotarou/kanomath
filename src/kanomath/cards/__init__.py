@@ -1,4 +1,4 @@
-from .card import Card2
+from .card import Card
 from .onhits import *
 from .other import *
 from .potions import *

@@ -7,16 +7,16 @@ import copy
 
 from kanomath.functions import add_card_to_zone, move_card_to_zone, move_cards_to_zone
 
-from .cards import Card2
+from .cards import Card
 
 import typing
 if typing.TYPE_CHECKING:
-    from kanomath.player2 import Player2
+    from kanomath.player import Player
     
 class Zone:
 
-    cards: Deque['Card2']
-    owner: Player2
+    cards: Deque['Card']
+    owner: Player
     zone_name = ""
 
     def __str__(self):
@@ -31,7 +31,7 @@ class Zone:
         else:
             return str + f"s: {self.cards[0]}, ..., {self.cards[-1]}]"
 
-    def __init__(self, owner: Player2):
+    def __init__(self, owner: Player):
     # def __init__(self, owner: 'Player2'):
         
         self.owner = owner
@@ -52,7 +52,7 @@ class Zone:
         random.shuffle(self.cards)
 
     # Primarily a testing method. WARNING: resets cards in zone
-    def seed_with_cards(self, seed_cards: list[Card2]) -> None:
+    def seed_with_cards(self, seed_cards: list[Card]) -> None:
         
         if self.size > 0:
             self.cards.clear()
@@ -89,7 +89,7 @@ class Zone:
     #         move_card_to_zone(card, "banish")
     #         del self.cards[i]
 
-    def contains_card(self, card: Card2) -> bool:
+    def contains_card(self, card: Card) -> bool:
         try:
             idx = self.cards.index(card)
             return True
@@ -109,7 +109,7 @@ class Zone:
                 count += 1
         return count
 
-    def remove_card(self, card) -> Card2:
+    def remove_card(self, card) -> Card:
 
         # TODO: replace with try cach for value error
         idx = self.cards.index(card)
@@ -148,7 +148,7 @@ class Deck(Zone):
          self.opt_incomplete = False
          Zone.__init__(self, owner)
 
-    def draw(self, num_to_take: int = 1) -> Card2 | list[Card2]:
+    def draw(self, num_to_take: int = 1) -> Card | list[Card]:
         
         if self.opt_incomplete:
             raise Exception("Attempting to draw cards while an opt is in progress.")
@@ -167,7 +167,7 @@ class Deck(Zone):
 
         return out
 
-    def opt(self, num_to_opt: int) -> list [Card2]:
+    def opt(self, num_to_opt: int) -> list [Card]:
         
         if self.opt_incomplete:
             raise Exception("Attempting to opt while another opt is in progress.")
@@ -187,7 +187,7 @@ class Deck(Zone):
         return out
 
     # After we have opted, return two lists of cards back to top and bottom of deck
-    def de_opt(self, top: list[Card2], bot: list[Card2]) -> None:
+    def de_opt(self, top: list[Card], bot: list[Card]) -> None:
 
         if not self.opt_incomplete:
             raise Exception("Attempting to deopt without opting first.")
@@ -200,7 +200,7 @@ class Deck(Zone):
 
         self.opt_incomplete = False
 
-    def peek(self) -> Card2 | None:
+    def peek(self) -> Card | None:
 
         if self.is_empty:
             return None
@@ -268,7 +268,7 @@ class Arsenal(Zone):
         return self.size > 0
     
     # TODO: support multiple arsenals eventually
-    def get_card(self) -> Card2 | None:
+    def get_card(self) -> Card | None:
         return self.cards[0] if self.size > 0 else None
 
     def __init__(self, owner, capacity):
@@ -312,5 +312,12 @@ class Arena(Zone):
     
     def __init__(self, owner):
         Zone.__init__(self, owner)
+    
+    def __repr__(self):
+        str_cards = "none" if self.size == 0 else ', '.join(str(x) for x in self.cards)
+        return f"[zone.arena: size {self.size}, cards: {str_cards}]"
 
+    def __str__(self):
+        str_cards = "none" if self.size == 0 else ', '.join(str(x) for x in self.cards)
+        return f"[size {self.size}, cards: {str_cards}]"
     

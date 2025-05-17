@@ -3,11 +3,11 @@ from .card import CardCyle, WizardNAA, determine_arcane_damage
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from kanomath.player2 import Player2
+    from kanomath.player import Player
 
 class AetherArc(WizardNAA):
 
-    def __init__(self, owner: Player2, zone: str):
+    def __init__(self, owner: Player, zone: str):
         self.card_name = "Aether Arc"
         self.arcane = 1
         self.cost = 0
@@ -21,7 +21,7 @@ class AetherSpindle(WizardNAA, CardCyle):
 
     card_name = "Aether Spindle"
 
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.arcane = determine_arcane_damage(4, colour)
         self.cost = 2
         WizardNAA.__init__(self, owner, zone, colour=colour)
@@ -31,7 +31,7 @@ class AetherSpindle(WizardNAA, CardCyle):
 
 class AetherFlare(WizardNAA, CardCyle):
 
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.card_name = "Aether Flare"
         self.arcane = determine_arcane_damage(3, colour)
         self.cost = 1 
@@ -42,7 +42,7 @@ class AetherFlare(WizardNAA, CardCyle):
 
 class AetherWildfire(WizardNAA):
 
-    def __init__(self, owner: Player2, zone: str):
+    def __init__(self, owner: Player, zone: str):
         self.card_name = "Aether Wildfire"
         self.arcane = 4
         self.cost = 2
@@ -54,7 +54,7 @@ class AetherWildfire(WizardNAA):
 
 class LessonInLava(WizardNAA):
 
-    def __init__(self, owner: Player2, zone: str):
+    def __init__(self, owner: Player, zone: str):
         self.card_name = "Lesson in Lava"
         self.arcane = 3
         self.cost = 1 
@@ -66,7 +66,7 @@ class LessonInLava(WizardNAA):
 
 class SonicBoom(WizardNAA):
 
-    def __init__(self, owner: Player2, zone: str):
+    def __init__(self, owner: Player, zone: str):
         self.card_name = "Sonic Boom"
         self.arcane = 3
         self.cost = 2

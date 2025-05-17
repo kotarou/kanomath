@@ -1,11 +1,12 @@
-from kanomath.cards.card import COMBO_CORE, COMBO_EXTENDERS, Card2
+from loguru import logger
+from kanomath.cards.card import COMBO_CORE, COMBO_EXTENDERS, Card
 from kanomath.cards.potions import POTIONS
 import typing
 from kanomath.functions import card_is_blue, match_card_name, move_card_to_zone, move_cards_to_zone, remove_all_matching, remove_first_matching
 import kanomath.zones as zone
 from functools import reduce
 
-class Player2:
+class Player:
     
     # This will be used to identify card owners when needed in print statements
     id = "player"
@@ -101,7 +102,7 @@ class Player2:
         zone = self.get_zone_by_name(zone_name)
         return zone.contains_card_name(card_name)
 
-    def get_card_by_intent(self, intent:str) -> Card2 | None:
+    def get_card_by_intent(self, intent:str) -> Card | None:
 
         if self.arsenal.has_card:
             if self.arsenal.get_card().intent == intent: # type: ignore
@@ -113,9 +114,9 @@ class Player2:
     
         return None
        
-    def get_cards_by_intent(self, intent:str) -> list[Card2]:
+    def get_cards_by_intent(self, intent:str) -> list[Card]:
 
-        output = list[Card2]()
+        output = list[Card]()
 
         if self.arsenal.has_card:
             if self.arsenal.get_card().intent == intent: # type: ignore
@@ -136,6 +137,20 @@ class Player2:
     def count_combo_access_card(self, card_name: str, allow_banish: bool = True) -> int:
         return self.hand.count_cards_name(card_name) + self.arsenal.count_cards_name(card_name) + (allow_banish and self.banish.count_cards_name(card_name) if allow_banish else 0)
 
+    def register_amp_next(self, amp_num: int, source: str):
+
+        if(amp_num < 0):
+            raise Exception(f"Cannot amp next spell less than 0 ({amp_num}).")
+
+        self.amp_next += 1
+
+    def register_amp(self, amp_num: int, source: str):
+        
+        if(amp_num < 0):
+            raise Exception(f"Cannot amp less than 0 ({amp_num}).")
+        
+        self.amp += 1
+
     def gain_pitch(self, num_resources: int):
         
         if num_resources < 1:
@@ -152,20 +167,11 @@ class Player2:
         
     def opt(self, opt_num: int) -> None:
         opt_cards = self.deck.opt(opt_num)
-        print(f"Seeing {opt_cards} when opting {opt_num}")
         opt_top, opt_bot = self.braino.resolve_opt(opt_cards)
-        print(f"  Then, putting {opt_top} to top and {opt_bot} to bottom.")
-        print(f"  {len(self.braino.topdeck_actions)} card(s) on top of deck will be acted on this turn, with action(s): {self.braino.topdeck_actions}.")
-
-
         self.deck.de_opt(opt_top, opt_bot)
-
-    def gain_amp(self, amp_num: int):
-
-        if(amp_num < 1):
-            raise Exception(f"Cannot amp less than 1 ({amp_num}).")
-
-        self.amp += 1
+        
+        logger.log("EFFECT", f"Opt saw {len(opt_top) + len(opt_bot)} cards. Put {opt_top} to top and {opt_bot} to bottom.")
+        logger.action(f"Opt saw {len(opt_top) + len(opt_bot)} cards. Put {opt_top} to top and {opt_bot} to bottom.")
 
     def kano(self):
 
@@ -182,7 +188,7 @@ class Player2:
 
         self.spend_pitch(3, "kano")
 
-        card = typing.cast(Card2, self.deck.peek())
+        card = typing.cast(Card, self.deck.peek())
 
         action = self.braino.decide_kano_result(card)
 
@@ -210,7 +216,7 @@ class Player2:
         else:
             raise Exception(f"Attempted to resolve a kano with an illegal outcome ({action}).")
 
-    def play_card(self, card: Card2, as_instant = False):
+    def play_card(self, card: Card, as_instant = False):
 
         # TODO: card controller & owner
         # For now not particularly considered, nor fully implemented
@@ -243,7 +249,7 @@ class Player2:
         if card.card_class == "wizard" and card.card_type == "action":
             self.wizard_naa_played += 1
 
-    def arsenal_card(self, card: Card2):
+    def arsenal_card(self, card: Card):
 
         if self.arsenal.size > 0:
             raise Exception(f"Attempting to arsenal {card} when {self.arsenal.get_card()} is already in the arsenal).")
@@ -251,7 +257,7 @@ class Player2:
         print(f"  Arsenalling {card}.")
         move_card_to_zone(card, "arsenal")
 
-    def pitch_card(self, card: Card2):
+    def pitch_card(self, card: Card):
 
         if card.pitch == 0:
             raise Exception(f"Attempting to pitch {card} with pitch value {card.pitch}.")
@@ -314,9 +320,12 @@ class Player2:
             self.pitch_card(card)
     
         if len (potential_action_cards) > 1:
-            raise Exception(f"Player has indicated more than one action to complete: {potential_action_cards}.")
+            # Very simple trick to ignore the issue of wanting to play more than one card: just hold the others
+            for potential_action in potential_action_cards[1:]:
+                print(f"  Player wants to play {potential_action}, but another action has been decided. Holding instead.")
+                potential_action.intent = "hold"
         
-        elif len (potential_action_cards) == 1:
+        if len (potential_action_cards) > 0:
 
             potential_card = potential_action_cards[0]
 
@@ -357,7 +366,7 @@ class Player2:
 class Braino:
 
     state : str
-    player: Player2
+    player: Player
 
     use_tunic: bool
     use_spellfire: bool
@@ -375,7 +384,7 @@ class Braino:
 
     num_kanos_possible: int
 
-    def __init__(self, player: Player2):
+    def __init__(self, player: Player):
 
         self.player = player
         self.state = "setup"
@@ -455,7 +464,7 @@ class Braino:
     def assess_critical_resources(self) -> int:
         return 10
 
-    def resolve_opt(self, opt_cards:list[Card2]) -> tuple[list[Card2], list[Card2]]:
+    def resolve_opt(self, opt_cards:list[Card]) -> tuple[list[Card], list[Card]]:
 
         # print("Entering opt method")
 
@@ -713,7 +722,7 @@ class Braino:
 
         return opt_cards, []
 
-    def opt_top_potions(self, opt_cards:list[Card2]) -> list[Card2]:                
+    def opt_top_potions(self, opt_cards:list[Card]) -> list[Card]:                
         # Potion priorities are normally simple, epot > dpot > cpot
         # There are edge cases: dpot #1 is maybe better than epot #3, and cpot #1 is better than dpot#2 
         #   Although access to will of arcana or eye complicates that further
@@ -727,7 +736,7 @@ class Braino:
 
         return pots
     
-    def opt_top_combo(self, opt_cards:list[Card2], target_cards:list[str] = []) -> list[Card2]: 
+    def opt_top_combo(self, opt_cards:list[Card], target_cards:list[str] = []) -> list[Card]: 
             
         # We get passed a list of cards we want for the combo
         if not len(target_cards):
@@ -747,7 +756,7 @@ class Braino:
 
         return top
 
-    def opt_top_combo_extenders(self, opt_cards:list[Card2], target_cards:list[str] = []) -> list[Card2]: 
+    def opt_top_combo_extenders(self, opt_cards:list[Card], target_cards:list[str] = []) -> list[Card]: 
             
         # We get passed a list of cards we want for the combo
         if not len(target_cards):
@@ -802,9 +811,9 @@ class Braino:
         spindle_minimum_pitch  = 3
         flare_minimum_pitch    = 5
 
-        card_play_options       = list[Card2]()
-        card_arsenal_options    = list[Card2]()
-        card_hold_options       = list[Card2]()
+        card_play_options       = list[Card]()
+        card_arsenal_options    = list[Card]()
+        card_hold_options       = list[Card]()
 
         # We don't want to play lesson if we have the combo pieces already
         if self.has_wf:
@@ -898,7 +907,7 @@ class Braino:
         self.kanos_dig_opponent_turn = spare_pitch // 3
 
     # Decide what action should be taken with a topdeck card
-    def decide_kano_result(self, card: Card2):
+    def decide_kano_result(self, card: Card):
 
         card_is_brick   = card.card_type != "action"
 

@@ -1,8 +1,6 @@
 from abc import ABC
 
-from kanomath.cards.card import Card2 # i.e. Abstract Base Class
-from .util import kprint
-from .card import Card
+from kanomath.cards.card import Card # i.e. Abstract Base Class
 
 class Opponent:
 

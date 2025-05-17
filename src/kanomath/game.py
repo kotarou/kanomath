@@ -1,7 +1,8 @@
+from loguru import logger
 import kanomath.cards as card
 from kanomath.functions import move_card_to_zone
 from kanomath.opponent import Opponent
-from kanomath.player2 import Player2
+from kanomath.player import Player
 
 class Game:
 
@@ -9,7 +10,7 @@ class Game:
     player_goes_first: bool
     player_num_turns: int = 0
 
-    player: Player2
+    player: Player
     opponent: Opponent
 
     @property
@@ -21,7 +22,7 @@ class Game:
         pass
 
     def setup_game(self):
-        self.player = Player2()
+        self.player = Player()
         self.opponent = Opponent()
 
         self.player.deck.seed_with_cards([
@@ -123,17 +124,25 @@ class Game:
             self.run_first_turn(self.opponent)
             self.run_player_turn()
     
+        idx = 0
+
         while self.game_should_continue:
             self.run_opponent_turn(False)
             self.run_player_turn()
-            break
+
+            if idx == 3:
+                break
+            else:
+                idx +=1 
+            
+            
 
 
         # Begin with the first turn, which is slightly unusual
 
-    def run_first_turn(self, turn_player: Player2 | Opponent):
+    def run_first_turn(self, turn_player: Player | Opponent):
 
-        print("Running first turn.")
+        logger.info("Running first turn.")
 
         if turn_player.id == "player":
 
@@ -150,8 +159,8 @@ class Game:
 
     def run_opponent_turn(self, game_first_turn):
 
-        print("----- -----")
-        print(f"Running opponent turn. Cards in hand: {self.player.hand}")
+        logger.info("-----")
+        logger.info(f"Running opponent turn. Cards in hand: {self.player.hand}")
 
         self.player.braino.evaluate_state()
         self.player.braino.cycle_make_initial_decisions()
@@ -162,8 +171,7 @@ class Game:
     
     def run_player_turn(self):
 
-        print("-----")
-        print(f"Running player turn. Hand: {self.player.hand}. Arsenal: {self.player.arsenal}")
+        logger.info(f"Running player turn. Hand: {self.player.hand}. Arsenal: {self.player.arsenal}. Arena: {self.player.arena}")
 
         self.player_num_turns += 1
 

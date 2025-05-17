@@ -3,7 +3,7 @@ from .card import CardCyle, WizardNAA, determine_arcane_damage
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from kanomath.player2 import Player2
+    from kanomath.player import Player
 
 
 # The following cards are not implemented because honestly why bother
@@ -14,7 +14,7 @@ class SurgeNAA(WizardNAA):
 
     keywords = ["surge"]
 
-    def __init__(self, owner: Player2, zone: str, colour: str):
+    def __init__(self, owner: Player, zone: str, colour: str):
         WizardNAA.__init__(self, owner, zone, colour=colour)
 
     def on_play(self):
@@ -33,7 +33,7 @@ class SurgeNAA(WizardNAA):
 
 class SwellTidings(SurgeNAA):
 
-    def __init__(self, owner: Player2, zone: str):
+    def __init__(self, owner: Player, zone: str):
         self.card_name = "Swell Tidings"
         self.arcane = 5
         self.cost = 2
@@ -44,7 +44,7 @@ class SwellTidings(SurgeNAA):
 
 class EternalInferno(SurgeNAA):
 
-    def __init__(self, owner: Player2, zone: str):
+    def __init__(self, owner: Player, zone: str):
         self.card_name = "Eternal Inferno"
         self.arcane = 4
         self.cost = 1
@@ -56,7 +56,7 @@ class EternalInferno(SurgeNAA):
 
 class MindWarp(SurgeNAA):
 
-    def __init__(self, owner: Player2, zone: str):
+    def __init__(self, owner: Player, zone: str):
         self.card_name = "Mind Warp"
         self.arcane = 2
         self.cost = 0
@@ -68,7 +68,7 @@ class MindWarp(SurgeNAA):
 
 class Overflow(SurgeNAA, CardCyle):
 
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.card_name = "Overflow the Aetherwell"
         self.arcane = determine_arcane_damage(3, colour)
         self.cost = 0 
@@ -79,7 +79,7 @@ class Overflow(SurgeNAA, CardCyle):
 
 class Prognosticate(SurgeNAA, CardCyle):
 
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.card_name = "Prognosticate"
         self.arcane = determine_arcane_damage(3, colour)
         self.cost = 0 
@@ -90,7 +90,7 @@ class Prognosticate(SurgeNAA, CardCyle):
 
 class FloodGates(SurgeNAA, CardCyle):
 
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.card_name = "Open the Flood Gates"
         self.arcane = determine_arcane_damage(3, colour)
         self.cost = 2  
@@ -101,7 +101,7 @@ class FloodGates(SurgeNAA, CardCyle):
 
 class AetherQuickening(SurgeNAA, CardCyle):
 
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.card_name = "Aether Quickening"
         self.arcane = determine_arcane_damage(4, colour)
         self.cost = 1
@@ -112,7 +112,7 @@ class AetherQuickening(SurgeNAA, CardCyle):
 
 class TrailblazingAether(SurgeNAA, CardCyle):
 
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.card_name = "Trailblazing Aether"
         self.arcane = determine_arcane_damage(4, colour)
         self.cost = 1
@@ -123,7 +123,7 @@ class TrailblazingAether(SurgeNAA, CardCyle):
 
 class DestructiveAethertide(SurgeNAA):
 
-    def __init__(self, owner: Player2, zone: str):
+    def __init__(self, owner: Player, zone: str):
         self.card_name = "Destructive Aethertide"
         self.arcane = 1
         self.cost = 0
@@ -134,7 +134,7 @@ class DestructiveAethertide(SurgeNAA):
 
 class PerennialAetherBloom(SurgeNAA, CardCyle):
 
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.card_name = "Perennial AetherBloom"
         self.arcane = determine_arcane_damage(1, colour)
         self.cost = 0 
@@ -145,7 +145,7 @@ class PerennialAetherBloom(SurgeNAA, CardCyle):
 
 class PopTheBubble(SurgeNAA, CardCyle):
 
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.card_name = "Pop the Bubble"
         self.arcane = determine_arcane_damage(1, colour)
         self.cost = 0 
@@ -156,7 +156,7 @@ class PopTheBubble(SurgeNAA, CardCyle):
 
 class Sap(SurgeNAA, CardCyle):
 
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.card_name = "Sap"
         self.arcane = determine_arcane_damage(1, colour)
         self.cost = 0 
@@ -168,7 +168,7 @@ class Sap(SurgeNAA, CardCyle):
 
 class EtchingsOfArcana(SurgeNAA, CardCyle):
 
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.card_name = "Etchings of Arcana"
         self.arcane = determine_arcane_damage(1, colour)
         self.cost = 0 

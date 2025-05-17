@@ -1,13 +1,42 @@
 from kanomath.game import Game
-from src.kanomath.player import Player
-from src.kanomath.opponent import Opponent
-from src.kanomath.controller import *
+
+from loguru import logger
+import sys
+from functools import partialmethod
+from typing import TYPE_CHECKING
+
 # Eventually import argparse for info
 
-# from src.kanomath.cards import EnergyPotion, AetherDart, AetherWildfire, CinderingForesight, Overflow
 
 if __name__ == "__main__":
     
+    logger_format = (
+    # "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
+        "<level>{level: <8}</level> | "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
+        # "<level>{message}</level>"
+        "{message}"
+    )
+
+    logger.remove(0) # remove the default handler configuration
+    logger.add(sys.stdout, level="DEBUG", serialize=False, format=logger_format)
+
+    logger.level("ACTION", no=15, color="<light-cyan>", icon="A")
+    logger.level("EFFECT", no=15, color="<light-blue>", icon="E")
+
+    logger.__setattr__("action",  partialmethod(logger.__class__.log, "action"))
+
+    logger.__class__.action = partialmethod(logger.__class__.log, "action")
+    logger.__class__.effect = partialmethod(logger.__class__.log, "effect") 
+
+    # setattr(logger, 'action', partialmethod(logger.__class__.log, "action"))
+
+
+    # def action(self, input: str):
+    #     logger.log("ACTION", input)
+
+    # logger.action = types.MethodType(action, logger) # type: ignore
+
     # player: Player = Player()
     # opponent: Opponent = Opponent()
 

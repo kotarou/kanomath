@@ -1,6 +1,6 @@
 import kanomath.cards as card
 from kanomath.functions import create_card_in_zone
-from kanomath.player2 import Player2
+from kanomath.player import Player
 import pytest
 
 
@@ -10,7 +10,7 @@ class TestCard2:
     
     def test_creating_cards(self):
 
-        player = Player2()
+        player = Player()
 
         # Test the direct creation of a potion, a card with multiple predefined properties
         epot = card.EnergyPotion(player, "arena")
@@ -58,7 +58,7 @@ class TestCard2:
 
     def test_activating_cards(self):
 
-        player = Player2()
+        player = Player()
 
         # Test the activation of an energy potion from hand
         epot = create_card_in_zone(card.EnergyPotion, player, "arena")

@@ -3,7 +3,7 @@ from .card import CardCyle, WizardNAA, determine_arcane_damage, determine_pitch,
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from kanomath.player2 import Player2
+    from kanomath.player import Player
 
 
 class BlazingAether(WizardNAA):
@@ -11,7 +11,7 @@ class BlazingAether(WizardNAA):
     card_name   = "Blazing Aether"
     cost        = 0
 
-    def __init__(self, owner: Player2, zone: str):
+    def __init__(self, owner: Player, zone: str):
         self.arcane = 0   
         self.colour = "red"    
         WizardNAA.__init__(self, owner, zone)
@@ -26,7 +26,7 @@ class ArcaneTwining(WizardNAA, ActivatableNAA, CardCyle):
     cost = 0
     activate_from_zone = "hand"
 
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.arcane = determine_arcane_damage(3, colour)      
         WizardNAA.__init__(self, owner, zone, colour = colour)
 
@@ -39,7 +39,7 @@ class ArcaneTwining(WizardNAA, ActivatableNAA, CardCyle):
 
 class PhotonSplicing(WizardNAA, CardCyle):
     
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.card_name = "Photon Splicing"
         self.arcane = determine_arcane_damage(4, colour)
         self.cost = 1       
@@ -54,7 +54,7 @@ class PhotonSplicing(WizardNAA, CardCyle):
 
 class AetherDart(WizardNAA, CardCyle):
     
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.card_name = "Aether Dart"
         self.arcane = determine_arcane_damage(3, colour)
         self.cost = 0       
@@ -62,7 +62,7 @@ class AetherDart(WizardNAA, CardCyle):
 
 class EmeritusScolding(WizardNAA, CardCyle):
 
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.card_name = "Emeritus Scolding"
         self.arcane = determine_arcane_damage(4, colour)
         self.cost = 2
@@ -74,7 +74,7 @@ class EmeritusScolding(WizardNAA, CardCyle):
 
 class ScaldingRain(WizardNAA, CardCyle):
     
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.card_name = "Scalding Rain"
         self.arcane = determine_arcane_damage(4, colour)
         self.cost = 1       
@@ -82,7 +82,7 @@ class ScaldingRain(WizardNAA, CardCyle):
 
 class VolticBolt(WizardNAA, CardCyle):
     
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.card_name = "Voltic Bolt"
         self.arcane = determine_arcane_damage(5, colour)
         self.cost = 2      
@@ -92,14 +92,14 @@ class Zap(WizardNAA, CardCyle):
     
     card_name = "Zap"
 
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.arcane = determine_arcane_damage(3, colour)
         self.cost = 0       
         WizardNAA.__init__(self, owner, zone, colour = colour)
 
 class Singe(WizardNAA, CardCyle):
     
-    def __init__(self, owner: Player2, zone: str, colour: str = "b"):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
         self.card_name = "Singe"
         self.arcane = determine_arcane_damage(3, colour)
         self.cost = 1      

@@ -5,7 +5,7 @@ from .card import ActivatableNAA
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from kanomath.player2 import Player2
+    from kanomath.player import Player
 
 
 
@@ -20,7 +20,7 @@ class Potion(ActivatableNAA):
     resolve_to_zone = "arena"
     activate_from_zone = "arena"
 
-    def __init__(self, owner: Player2, zone: str):
+    def __init__(self, owner: Player, zone: str):
         self.colour = "blue"
 
         super().__init__(owner, zone)
@@ -31,15 +31,12 @@ class Potion(ActivatableNAA):
     def on_activate(self):
         ActivatableNAA.on_activate(self)
 
-
-
-
 class EnergyPotion(Potion):
 
     card_name = "Energy Potion"
     card_name_short = "epot"
 
-    def __init__(self, owner: Player2, zone: str):      
+    def __init__(self, owner: Player, zone: str):      
         super().__init__(owner, zone)
 
     def on_activate(self):
@@ -51,7 +48,7 @@ class DejaVuPotion(Potion):
     card_name = "Potion of Deja Vu"
     card_name_short = "dpot"
 
-    def __init__(self, owner: Player2, zone: str):       
+    def __init__(self, owner: Player, zone: str):       
         Potion.__init__(self, owner, zone)
 
     def on_activate(self):
@@ -65,7 +62,7 @@ class ClarityPotion(Potion):
     card_name = "Clarity Potion" 
     card_name_short = "cpot"
 
-    def __init__(self, owner: Player2, zone: str):
+    def __init__(self, owner: Player, zone: str):
         Potion.__init__(self, owner, zone)
 
     def on_activate(self):

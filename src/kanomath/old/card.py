@@ -69,7 +69,7 @@ class Card:
         # TODO: role of combo
 
         if(self.cardName == "Will of Arcana"):
-            player.amp += 1
+            player.register_amp(1, "will")
 
         elif(self.cardName == "Eye of Ophidia"):
             # Eye is pretty complex, and this behaviour can be improved
@@ -174,7 +174,7 @@ class Card:
 
 
         if(self.cardName == "Kindle"):
-            player.amp += 1
+            player.register_amp(1, "kindle")
             topDeck = flatten(player.deck.draw(1))
             
             kprint(f"Playing {self}, amping 1, and drawing {topDeck}", 1)

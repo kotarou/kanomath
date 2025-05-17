@@ -1,5 +1,5 @@
 import kanomath.cards as card
-from kanomath.player2 import Player2
+from kanomath.player import Player
 import pytest
 
 from kanomath.zones import Deck
@@ -11,7 +11,7 @@ class TestCard2:
     
     def test_creating_player(self):
 
-        player = Player2()
+        player = Player()
         assert player.hand is not None
         assert player.action_points == 0
         assert player.arsenal.capacity == 1
@@ -112,7 +112,7 @@ class TestCard2:
 
     def test_opt_setup_potions(self):
 
-        player = Player2()
+        player = Player()
 
         player.deck.seed_with_cards([           
             card.AetherArc(player, "test"),
@@ -148,7 +148,7 @@ class TestCard2:
 
     def test_opt_setup_switch_combo(self):
         
-        player = Player2()
+        player = Player()
 
         player.deck.seed_with_cards([           
             card.AetherWildfire(player, "test"),
@@ -191,7 +191,7 @@ class TestCard2:
 
     def test_opt_combo(self):
         
-        player = Player2()
+        player = Player()
 
         player.deck.seed_with_cards([           
             card.Kindle(player, "test"),
@@ -238,7 +238,7 @@ class TestCard2:
 
     def test_decision_1(self):
         
-        player = Player2()
+        player = Player()
 
         player.deck.seed_with_cards([           
             card.AetherDart(player, "test", "y"),
@@ -279,7 +279,7 @@ class TestCard2:
         
     def test_decision_2(self):
         
-        player = Player2()
+        player = Player()
 
         player.deck.seed_with_cards([           
             card.AetherDart(player, "test", "y"),
@@ -312,7 +312,7 @@ class TestCard2:
 
     def test_decision_3(self):
         
-        player = Player2()
+        player = Player()
 
         player.deck.seed_with_cards([           
             card.AetherDart(player, "test", "y"),
@@ -345,7 +345,7 @@ class TestCard2:
 
     def test_kano_play_epot(self):
         
-        player = Player2()
+        player = Player()
 
         player.deck.seed_with_cards([           
             card.EnergyPotion(player, "test")
@@ -368,7 +368,7 @@ class TestCard2:
     
     def test_play_spindle(self):
         
-        player = Player2()
+        player = Player()
 
         player.deck.seed_with_cards([           
             card.AetherDart(player, "test", "r"),

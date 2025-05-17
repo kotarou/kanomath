@@ -4,11 +4,12 @@ from enum import Enum
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from kanomath.player2 import Player2
+    from kanomath.player import Player
 
 
 from kanomath.functions import move_card_to_zone
 
+# TODO: replace this with logger colours
 def print_colour(input: int | str):
 
     match input:
@@ -66,11 +67,11 @@ def determine_arcane_damage(base: int, colour: str) -> int:
 
     return base - delta
 
-class Card2:
+class Card:
 
     # Game state details
-    controller: Player2
-    owner: Player2
+    controller: Player
+    owner: Player
     zone: str
     # TODO: explicitly type targets
     # target: 
@@ -114,7 +115,7 @@ class Card2:
     def __repr__(self):
         return self.__str__()
 
-    def __init__(self, owner: Player2, zone = "deck", *args, **kwargs):
+    def __init__(self, owner: Player, zone = "deck", *args, **kwargs):
         self.zone = zone
         self.owner = owner
         self.controller = owner
@@ -175,7 +176,7 @@ class Card2:
 COMBO_CORE      = ["Aether Wildfire", "Blazing Aether", "Lesson in Lava"]
 COMBO_EXTENDERS = ["Open the Flood Gates", "Overflow the Aetherwell", "Tome of Aetherwind", "Tome of Fyendal", "Sonic Boom"]
 
-class ActivatableNAA(Card2):
+class ActivatableNAA(Card):
     card_type = "action"
     card_subtype = ""
 
@@ -203,7 +204,7 @@ class ActivatableNAA(Card2):
         return "unknown"
 
 
-class GenericNAA(Card2):
+class GenericNAA(Card):
     card_class      = "generic"
     card_type       = "action"
     card_sub_type   = ""
@@ -211,25 +212,25 @@ class GenericNAA(Card2):
 class CardCyle():
     is_rainbow = True
 
-class WizardNAA(Card2):
+class WizardNAA(Card):
     card_class      = "wizard"
     card_type       = "action"
     card_sub_type   = ""
 
     arcane_damage_dealt = 0
 
-    def __init__(self, owner: Player2, zone = "deck", *args, **kwargs):
+    def __init__(self, owner: Player, zone = "deck", *args, **kwargs):
 
         # Almost all wizard NAA block 3, so setit here as a default
         if not hasattr(self, "block"):
             self.block   = 3
 
-        Card2.__init__(self, owner, zone, *args, **kwargs)
+        Card.__init__(self, owner, zone, *args, **kwargs)
 
     def on_play(self):
-        Card2.on_play(self)
+        Card.on_play(self)
 
-class WizardInstant(Card2):
+class WizardInstant(Card):
     
     card_class  = "wizard"
     card_type   = "instant"
@@ -237,6 +238,6 @@ class WizardInstant(Card2):
     block = 0
     
 
-    def __init__(self, owner: Player2, zone = "deck", *args, **kwargs):
-        Card2.__init__(self, owner, zone, *args, **kwargs)
+    def __init__(self, owner: Player, zone = "deck", *args, **kwargs):
+        Card.__init__(self, owner, zone, *args, **kwargs)
 
