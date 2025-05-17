@@ -43,6 +43,7 @@ class CinderingForesight(WizardNAA, CardCyle):
         # One of the only cards that cares about its colour in its resolution
         # opt some amount
         # amp 1 (kind of)
+        WizardNAA.on_play(self)
         pass    
     
 class Kindle(WizardInstant):
@@ -70,7 +71,8 @@ class EyeOfOphidia(Gem):
         Gem.__init__(self, owner, zone)
 
     def on_pitch(self):
-        self.controller.opt(2)  
+        self.controller.opt(2)
+        Card2.on_pitch(self)  
 
 class WillOfArcana(Gem):
 
@@ -82,4 +84,5 @@ class WillOfArcana(Gem):
         Gem.__init__(self, owner, zone)
 
     def on_pitch(self):
-        self.controller.gain_amp(1)  
+        self.controller.gain_amp(1)
+        Card2.on_pitch(self)  

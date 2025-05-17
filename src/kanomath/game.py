@@ -150,7 +150,8 @@ class Game:
 
     def run_opponent_turn(self, game_first_turn):
 
-        print("Running opponent's turn.")
+        print("----- -----")
+        print(f"Running opponent turn. Cards in hand: {self.player.hand}")
 
         self.player.braino.evaluate_state()
         self.player.braino.cycle_make_initial_decisions()
@@ -161,7 +162,8 @@ class Game:
     
     def run_player_turn(self):
 
-        print("Running player turn.")
+        print("-----")
+        print(f"Running player turn. Hand: {self.player.hand}. Arsenal: {self.player.arsenal}")
 
         self.player_num_turns += 1
 
@@ -169,6 +171,7 @@ class Game:
         self.player.play_own_turn()
         
         self.cleanup_turn()
+
 
 
     def cleanup_turn(self):        

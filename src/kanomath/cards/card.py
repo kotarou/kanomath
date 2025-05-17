@@ -165,7 +165,6 @@ class Card2:
 
     def on_play(self):
         move_card_to_zone(self, self.resolve_to_zone)
-        self.controller.spend_pitch(self.cost)
         pass
 
     def on_pitch(self) -> int:

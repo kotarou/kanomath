@@ -228,7 +228,15 @@ class Hand(Zone):
         self.intellect = intellect
 
         Zone.__init__(self, owner)
-    
+
+    def __repr__(self):
+        str_cards = "none" if self.size == 0 else ', '.join(str(x) for x in self.cards)
+        return f"[zone.hand: size {self.size}, cards: {str_cards}]"
+
+    def __str__(self):
+        str_cards = "none" if self.size == 0 else ', '.join(str(x) for x in self.cards)
+        return f"[size {self.size}, cards: {str_cards}]"
+
     @property
     def potential_pitch(self) -> int:
         pitch = 0
@@ -246,6 +254,9 @@ class Hand(Zone):
                 add_card_to_zone(card, "hand")
         else:
             add_card_to_zone(cards, "hand")
+
+        # print(f"Player's hand for next turn: {self.cards}.")
+
 
 class Arsenal(Zone):
 
@@ -265,6 +276,14 @@ class Arsenal(Zone):
         self.cards = deque(maxlen=self.capacity)
         
         Zone.__init__(self, owner)
+
+    def __repr__(self):
+        str_cards = "none" if self.size == 0 else ', '.join(str(x) for x in self.cards)
+        return f"[zone.arsenal: size {self.size}, cards: {str_cards}]"
+
+    def __str__(self):
+        str_cards = "none" if self.size == 0 else ', '.join(str(x) for x in self.cards)
+        return f"[size {self.size}, cards: {str_cards}]"
 
 class Pitch(Zone):
     

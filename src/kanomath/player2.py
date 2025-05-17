@@ -169,8 +169,6 @@ class Player2:
 
     def kano(self):
 
-        print("  Player activated kano.")
-
         if self.pitch_floating < 3:
             raise Exception(f"Attempting to kano with {self.pitch_floating} resources. Need 3.")
 
@@ -179,6 +177,8 @@ class Player2:
         
         if len(self.braino.topdeck_actions) and self.braino.topdeck_actions[0] != "kano":
             raise Exception(f"Attempting to kano when the correct topdeck action is {self.braino.topdeck_actions[0]}.")
+
+        print(f"  Player activated kano. Pitch {self.pitch_floating} -> {self.pitch_floating - 3}.")
 
         self.pitch_floating -= 3
 
@@ -216,7 +216,10 @@ class Player2:
         # For now not particularly considered, nor fully implemented
         # if card.controller != self.id:
         #     raise Exception("Attempting to play a card we do not control ({card.controller} != {self.id})")
-        
+
+        print(f"  Playing {card} from {card.zone} as an {'action' if card.card_type == "action" and not as_instant else 'instant'}. Pitch {self.pitch_floating} -> {self.pitch_floating - card.cost}")
+
+
         if card.card_type == "action" and not as_instant:
             if self.action_points == 0 or self.is_player_turn == False:
                 raise Exception(f"Attempting to play an action when disallowed (Player turn: {self.is_player_turn}, AP: {self.action_points}, as_instant: {as_instant}).")
@@ -225,7 +228,13 @@ class Player2:
 
         if self.pitch_floating >= card.cost:
             # TODO: assess nodes and crucible activations
+
+            # We spend the resources here instead of in the card's play method
+            # This avoid an inheritance issue present in earlier code, and also keeps player code in player
+            self.spend_pitch(card.cost)
             card.on_play()
+            # move_card_to_zone(card, "arsenal")
+
 
         else:
             # TODO: pitch to play the
@@ -237,7 +246,7 @@ class Player2:
     def arsenal_card(self, card: Card2):
 
         if self.arsenal.size > 0:
-            raise Exception(f"Attempting to arsenal {card} when {self.arsenal.get_card()} is already in the arsenal.")
+            raise Exception(f"Attempting to arsenal {card} when {self.arsenal.get_card()} is already in the arsenal (and considers its zone to be {self.arsenal.get_card().zone}).")
 
         print(f"  Arsenalling {card}.")
         move_card_to_zone(card, "arsenal")
@@ -247,7 +256,7 @@ class Player2:
         if card.pitch == 0:
             raise Exception(f"Attempting to pitch {card} with pitch value {card.pitch}.")
 
-        print(f"  Pitching {card}.")
+        print(f"  Pitching {card}. {{r}} {self.pitch_floating} -> {self.pitch_floating + card.pitch}. Hand: {self.hand.size - 1} left.")
         card.on_pitch()
 
 
@@ -260,16 +269,26 @@ class Player2:
 
         pitch_cards = self.get_cards_by_intent("pitch")
         pitch_cards.sort(key = lambda x : x.pitch, reverse=True)
+       
+        print(f"  Aiming to kano {num_kanos_aim} times in opponent's turn.")
 
         while(num_kanos_completed < num_kanos_aim):
             
+            # print(f"Kanos completed: {num_kanos_completed}. To complete: {num_kanos_aim - num_kanos_completed}. Loop condition {num_kanos_completed < num_kanos_aim} ")
+
             while(self.pitch_floating < 3):
                 if len(pitch_cards):
+                    # Ideally pitch efficiently, so take from the beginning of the pitch array
                     card = pitch_cards.pop(0)
-                    card.on_pitch()
+                    self.pitch_card(card)
                 else:
-                    raise Exception(f"Somehow, trying to get more pitch when out of pitch cards. ")
-            
+                    # Aimed to kano more times than we have
+                    # Chances are we spent the resources on a kano'd card, or have since decided to hold a card
+                    print(f"    Ran out of resources to kano with. Have {self.pitch_floating} floating, but hand is {self.hand} (pitch cards: {pitch_cards})")
+                    break
+                    # raise Exception(f"Somehow, trying to get more pitch when out of pitch cards. ")
+            # print(f"current float: {self.pitch_floating} (bot)")
+
             # TODO: assess maybe comboing based on the kano result
             self.kano()
             num_kanos_completed += 1
@@ -278,12 +297,12 @@ class Player2:
             print("  Player drew up for end of first turn.")
             self.hand.draw_up()
 
+        self.pitch_floating     = 0
+
     def play_own_turn(self, game_first_turn = False):
 
         self.action_points      = 1
         self.is_player_turn     = True
-
-        print(f"  Player opens turns with hand: {self.hand.cards}.")
 
         potential_pitch_cards   = self.get_cards_by_intent("pitch")
         potential_action_cards  = self.get_cards_by_intent("play")
@@ -291,15 +310,13 @@ class Player2:
 
         # Strictly this is the wrong order to do things, and instead pitch cards should be used as demanded, but this works for now
         # TODO: make card pitching actually follow the rules of the game
-        for card in potential_pitch_cards:
+        for card in reversed(potential_pitch_cards):
             self.pitch_card(card)
     
         if len (potential_action_cards) > 1:
             raise Exception(f"Player has indicated more than one action to complete: {potential_action_cards}.")
         
         elif len (potential_action_cards) == 1:
-            play_card = potential_action_cards[0]
-            print(f"  Playing {play_card} from {play_card.zone} as an action.")
             self.play_card(potential_action_cards[0])
 
         while self.pitch_floating >= 3:
@@ -312,9 +329,11 @@ class Player2:
             self.arsenal_card(potential_arsenal_cards[0])
             
         print(f"  Player drew {self.current_intellect - self.hand.size} cards for end of their turn.")
+        
         self.hand.draw_up()
         self.action_points      = 0        
         self.is_player_turn     = True
+        self.pitch_floating     = 0
 
         pass
 
@@ -836,24 +855,28 @@ class Braino:
         # Work out how many resources we should be holding
         if action_card is not None:
 
-            if action_card.card_name == "Aether Spindle":
-                if pitch_intent >= spindle_optimal_pitch:
-                    pitch_to_hold = spindle_optimal_pitch
-                elif pitch_intent > spindle_minimum_pitch:
-                    pitch_to_hold = spindle_minimum_pitch
-                else:
-                    raise Exception(f"Decided on an action to play spindle, but have no way of paying for it")
+            # Theres some fairly complex behaviours about pitch to keep for a spindle or flare
+            # For now, ignore it
+            # TODO: implement this
+
+            # if action_card.card_name == "Aether Spindle":
+            #     if pitch_intent >= spindle_optimal_pitch:
+            #         pitch_to_hold = spindle_optimal_pitch
+            #     elif pitch_intent > spindle_minimum_pitch:
+            #         pitch_to_hold = spindle_minimum_pitch
+            #     else:
+            #         raise Exception(f"Decided on an action to play spindle, but have no way of paying for it")
         
-            elif action_card.card_name == "Aether Flare":
-                if pitch_intent >= flare_optimal_pitch:
-                    pitch_to_hold = flare_optimal_pitch
-                elif pitch_intent > flare_minimum_pitch:
-                    pitch_to_hold = flare_minimum_pitch
-                else:
-                    raise Exception(f"Decided on an action to play aether flare, but have no way of paying for it")
+            # elif action_card.card_name == "Aether Flare":
+            #     if pitch_intent >= flare_optimal_pitch:
+            #         pitch_to_hold = flare_optimal_pitch
+            #     elif pitch_intent > flare_minimum_pitch:
+            #         pitch_to_hold = flare_minimum_pitch
+            #     else:
+            #         raise Exception(f"Decided on an action to play aether flare, but have no way of paying for it")
                 
-            else:
-                pitch_to_hold = action_card.cost
+            # else:
+            pitch_to_hold = action_card.cost
 
         # Use the rest to kano
         spare_pitch = pitch_intent - pitch_to_hold
