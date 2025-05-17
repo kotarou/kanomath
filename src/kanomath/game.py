@@ -1,5 +1,5 @@
 import kanomath.cards as card
-from kanomath.functions import move_cards_between_zones, move_cards_to_zone
+from kanomath.functions import move_card_to_zone
 from kanomath.opponent import Opponent
 from kanomath.player2 import Player2
 
@@ -133,6 +133,8 @@ class Game:
 
     def run_first_turn(self, turn_player: Player2 | Opponent):
 
+        print("Running first turn.")
+
         if turn_player.id == "player":
 
             self.player.braino.evaluate_state()
@@ -147,6 +149,9 @@ class Game:
 
 
     def run_opponent_turn(self, game_first_turn):
+
+        print("Running opponent's turn.")
+
         self.player.braino.evaluate_state()
         self.player.braino.cycle_make_initial_decisions()
         
@@ -155,6 +160,9 @@ class Game:
 
     
     def run_player_turn(self):
+
+        print("Running player turn.")
+
         self.player_num_turns += 1
 
         self.player.braino.evaluate_state()
@@ -167,4 +175,9 @@ class Game:
         
         # At the end, clean up the player's banish
         # TODO: This should be a method on player, seeing as it assumes the same owner and all
-        move_cards_between_zones(self.player, "banish", "exile")
+        # move_cards_between_zones(self.player, "banish", "exile")
+
+        for idx in reversed(range(len(self.player.banish.cards))):
+            card = self.player.banish.cards[idx]
+
+            move_card_to_zone(card, "exile")

@@ -116,6 +116,7 @@ class Zone:
 
         # raise Exception(f"Attempting to remove {card} from {self}, but it was not present")
 
+        # self.cards.remove(card)
         self.cards.remove(card)
         card.zone = ""
         card.intent = ""

@@ -86,7 +86,7 @@ class VolticBolt(WizardNAA, CardCyle):
         self.card_name = "Voltic Bolt"
         self.arcane = determine_arcane_damage(5, colour)
         self.cost = 2      
-        WizardNAA.__init__(self, owner, zone, colour)
+        WizardNAA.__init__(self, owner, zone, colour=colour)
 
 class Zap(WizardNAA, CardCyle):
     
@@ -103,4 +103,4 @@ class Singe(WizardNAA, CardCyle):
         self.card_name = "Singe"
         self.arcane = determine_arcane_damage(3, colour)
         self.cost = 1      
-        WizardNAA.__init__(self, owner, zone, colour)
+        WizardNAA.__init__(self, owner, zone, colour=colour)

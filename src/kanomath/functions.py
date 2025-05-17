@@ -8,14 +8,6 @@ if TYPE_CHECKING:
 
 T = TypeVar('T')
 
-def move_cards_between_zones(player: Player2, old_zone_name: str, new_zone_name: str):
-    
-    old_zone = player.get_zone_by_name(old_zone_name)
-    # new_zone = player.get_zone_by_name(new_zone_name)
-
-    for card in old_zone.cards:
-        move_card_to_zone(card, new_zone_name)
-
 def move_cards_to_zone(cards: list[Card2], new_zone: str):
     for card in cards:
         move_card_to_zone(card, new_zone)

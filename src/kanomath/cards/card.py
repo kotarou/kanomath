@@ -205,19 +205,19 @@ class ActivatableNAA(Card2):
 
 
 class GenericNAA(Card2):
-    cardClass = "generic"
-    cardType = "action"
-    cardSubType = ""
+    card_class      = "generic"
+    card_type       = "action"
+    card_sub_type   = ""
 
 class CardCyle():
     is_rainbow = True
 
 class WizardNAA(Card2):
-    cardClass = "wizard"
-    cardType = "action"
-    cardSubType = ""
+    card_class      = "wizard"
+    card_type       = "action"
+    card_sub_type   = ""
 
-    arcaneDealt = 0
+    arcane_damage_dealt = 0
 
     def __init__(self, owner: Player2, zone = "deck", *args, **kwargs):
 
@@ -231,10 +231,12 @@ class WizardNAA(Card2):
         Card2.on_play(self)
 
 class WizardInstant(Card2):
-    cardClass = "wizard"
+    
+    card_class  = "wizard"
+    card_type   = "instant"
     # We don;t bother differentating pearl and 0 block
     block = 0
-    cardType = "instant"
+    
 
     def __init__(self, owner: Player2, zone = "deck", *args, **kwargs):
         Card2.__init__(self, owner, zone, *args, **kwargs)

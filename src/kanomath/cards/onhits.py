@@ -19,11 +19,12 @@ class AetherArc(WizardNAA):
 
 class AetherSpindle(WizardNAA, CardCyle):
 
+    card_name = "Aether Spindle"
+
     def __init__(self, owner: Player2, zone: str, colour: str = "b"):
-        self.card_name = "Aether Spindle"
         self.arcane = determine_arcane_damage(4, colour)
         self.cost = 2
-        WizardNAA.__init__(self, owner, zone, colour)
+        WizardNAA.__init__(self, owner, zone, colour=colour)
 
     def on_damage(self):
         pass
@@ -34,7 +35,7 @@ class AetherFlare(WizardNAA, CardCyle):
         self.card_name = "Aether Flare"
         self.arcane = determine_arcane_damage(3, colour)
         self.cost = 1 
-        WizardNAA.__init__(self, owner, zone, colour)
+        WizardNAA.__init__(self, owner, zone, colour=colour)
 
     def on_damage(self):
         pass

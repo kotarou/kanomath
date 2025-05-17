@@ -91,6 +91,8 @@ class Player2:
                 return self.exile     
             case "arena":
                 return self.arena        
+            case "arsenal":
+                return self.arsenal    
             case _:
                 raise Exception(f"Attempting to access zone that doesn't exist: {zone_name}")
     
@@ -166,7 +168,9 @@ class Player2:
         self.amp += 1
 
     def kano(self):
-        
+
+        print("  Player activated kano.")
+
         if self.pitch_floating < 3:
             raise Exception(f"Attempting to kano with {self.pitch_floating} resources. Need 3.")
 
@@ -182,7 +186,7 @@ class Player2:
 
         action = self.braino.decide_kano_result(card)
 
-        print(f"Braino has decided to {action} the {card}.")
+        print(f"    Braino has decided to {action} the {card}.")
 
         if action == "brick":
             # We could set num_kanos to 0 here to stop kanoing
@@ -230,6 +234,22 @@ class Player2:
         if card.card_class == "wizard" and card.card_type == "action":
             self.wizard_naa_played += 1
 
+    def arsenal_card(self, card: Card2):
+
+        if self.arsenal.size > 0:
+            raise Exception(f"Attempting to arsenal {card} when {self.arsenal.get_card()} is already in the arsenal.")
+
+        print(f"  Arsenalling {card}.")
+        move_card_to_zone(card, "arsenal")
+
+    def pitch_card(self, card: Card2):
+
+        if card.pitch == 0:
+            raise Exception(f"Attempting to pitch {card} with pitch value {card.pitch}.")
+
+        print(f"  Pitching {card}.")
+        card.on_pitch()
+
 
     def play_opponent_turn(self, game_first_turn = False):
 
@@ -255,10 +275,46 @@ class Player2:
             num_kanos_completed += 1
 
         if game_first_turn:
+            print("  Player drew up for end of first turn.")
             self.hand.draw_up()
 
     def play_own_turn(self, game_first_turn = False):
 
+        self.action_points      = 1
+        self.is_player_turn     = True
+
+        print(f"  Player opens turns with hand: {self.hand.cards}.")
+
+        potential_pitch_cards   = self.get_cards_by_intent("pitch")
+        potential_action_cards  = self.get_cards_by_intent("play")
+        potential_arsenal_cards = self.get_cards_by_intent("arsenal")
+
+        # Strictly this is the wrong order to do things, and instead pitch cards should be used as demanded, but this works for now
+        # TODO: make card pitching actually follow the rules of the game
+        for card in potential_pitch_cards:
+            self.pitch_card(card)
+    
+        if len (potential_action_cards) > 1:
+            raise Exception(f"Player has indicated more than one action to complete: {potential_action_cards}.")
+        
+        elif len (potential_action_cards) == 1:
+            play_card = potential_action_cards[0]
+            print(f"  Playing {play_card} from {play_card.zone} as an action.")
+            self.play_card(potential_action_cards[0])
+
+        while self.pitch_floating >= 3:
+            self.kano()
+
+        if len (potential_arsenal_cards) > 1:
+            raise Exception(f"Player has indicated more than one card to put in arsenal: {potential_arsenal_cards}.")
+        
+        elif len (potential_arsenal_cards) == 1:
+            self.arsenal_card(potential_arsenal_cards[0])
+            
+        print(f"  Player drew {self.current_intellect - self.hand.size} cards for end of their turn.")
+        self.hand.draw_up()
+        self.action_points      = 0        
+        self.is_player_turn     = True
 
         pass
 
@@ -763,7 +819,7 @@ class Braino:
                 card_arsenal_options[0].intent = "arsenal"
 
         # Allocate the card to play 
-        if not any(card.intent == "play" for card in card_play_options):
+        if not any(card.intent == "play" for card in card_play_options) and len(card_play_options):
             card_play_options[0].intent = "play"
 
         # Note all other cards as hold or pitch as needed
