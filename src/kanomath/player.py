@@ -227,6 +227,7 @@ class Player:
         elif action == "play":
             logger.action(f"Player activated kano, seeing {card}. Banishing it to play as an instant.")
             card.move_to_zone("banish")
+
             self.play_card(card, as_instant=True)
 
         else:
@@ -529,7 +530,7 @@ class Braino:
                 if num_blues == 3 or (num_blues == 2 and self.num_epots > 0):
                     self.state = "combo"
         
-        
+
 
 
     @property
@@ -900,6 +901,7 @@ class Braino:
 
         if len(option_play_turn):
             best_play    = option_play_turn.pop(0)
+            # print(best_play)
 
             if self.assign_action_priority(best_play) > 0:
                 best_play.intent = "play"
@@ -920,15 +922,23 @@ class Braino:
 
             if current_arsenal is None:
                 best_arsenal.intent = "arsenal"
+            elif current_arsenal.card_name == best_arsenal.card_name:
+                # If the best card is already in the arsenal,  just pass. 
+                pass
             else:
-                # Use names here for special case where we have the same card in arsenal
-                if current_arsenal.card_name is not best_arsenal.card_name:
-                    
-                    # TODO logic for when holding arsenal is better
-                    current_arsenal.intent = "play"
-                    if best_play is not None:
-                        best_play.intent = "hold"
-                    best_play = current_arsenal
+                # Play the current arsenal out
+                # And switch the intent of our best play to "hold" for next turn
+                # TODO logic for when holding arsenal is better
+                # logger.debug(f"Want to swap out current arsenal ({current_arsenal}) for {best_arsenal}")
+
+                current_arsenal.intent = "play"
+                if best_play is not None and best_play is not current_arsenal:
+                    best_play.intent = "hold"
+                best_play = current_arsenal
+                best_arsenal.intent = "arsenal"
+            
+                # logger.debug(f"Want to swap out current arsenal ({current_arsenal}) for {best_arsenal}")
+
             
             option_hold.extend(option_arsenal)
     
@@ -940,6 +950,10 @@ class Braino:
 
             # Remove duplicates, but we're happy to keep potions
             for card in option_hold:
+                if card.zone == "arsenal":
+                    seen.append(card.card_name)
+                    continue
+
                 if card.card_name in seen and not "Potion" in card.card_name:
                     option_unassinged.append(card)
                     continue

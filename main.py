@@ -7,8 +7,7 @@ from typing import TYPE_CHECKING
 
 # Eventually import argparse for info
 
-
-if __name__ == "__main__":
+def setup():
     
     logger_format = (
     # "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
@@ -33,6 +32,11 @@ if __name__ == "__main__":
     logger.__class__.effect = partialmethod(logger.__class__.log, "effect") 
     logger.__class__.decision = partialmethod(logger.__class__.log, "decision") 
     logger.__class__.system = partialmethod(logger.__class__.log, "system")
+
+
+if __name__ == "__main__":
+    
+    setup()
 
  
 

@@ -9,6 +9,8 @@ import copy
 # from kanomath.functions import add_card_to_zone, move_card_to_zone, move_cards_to_zone
 
 import typing
+
+from loguru import logger
 if typing.TYPE_CHECKING:
     from kanomath.player import Player
     from .cards import Card
@@ -19,6 +21,8 @@ class Zone:
     @staticmethod
     def move_card_to_zone(card: Card, new_zone_name: str, position = "top"):
         
+        logger.debug(f"moving {card} from {card.zone} to {new_zone_name}")
+
         old_zone = card.controller.get_zone_by_name(card.zone)
         old_zone.remove_card(card)
 
@@ -32,7 +36,15 @@ class Zone:
         add_index   = new_zone.size if position == "bottom" else 0
         new_zone.add_card(card, add_index)
 
+    @staticmethod
+    def create_card_in_zone(cls, player: Player, zone_name: str, *args, **kwargs) -> Card:
 
+        # TODO: send relevant kwargs along too
+        card = cls(player, zone_name) # type: ignore
+
+        Zone.add_card_to_zone(card, zone_name)
+
+        return card
 
     cards: Deque['Card']
     owner: Player

@@ -74,6 +74,7 @@ class Card:
                 delta = 0
 
         return default_value - delta
+    
 
     def __init__(self, owner: Player, zone: str = "deck", *args, **kwargs):
         
@@ -84,11 +85,13 @@ class Card:
       
         if not hasattr(self, "colour"):
             self.colour =  Card.format_colour_string(kwargs.get('colour', "pearl"))
-
+        if not hasattr(self, "resolve_to_zone"):
+            self.resolve_to_zone    = "discard"
+        
+        
         # Defaults
         self.keywords           = list[str]()
         self.is_rainbow         = False
-        self.resolve_to_zone    = "discard"
 
         # Stuff that will be set later
         self.block: int

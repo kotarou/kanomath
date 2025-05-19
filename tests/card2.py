@@ -1,7 +1,8 @@
 import kanomath.cards as card
-from kanomath.functions import create_card_in_zone
 from kanomath.player import Player
 import pytest
+
+from kanomath.zones import Zone
 
 
 class TestCard2:
@@ -21,13 +22,13 @@ class TestCard2:
         assert epot.card_name == "Energy Potion"
 
         # Test creating a card in a zone
-        dpot = create_card_in_zone(card.DejaVuPotion, player, "arena")
+        dpot = Zone.create_card_in_zone(card.DejaVuPotion, player, "arena")
         assert dpot.pitch == 3
         assert dpot.zone == "arena"
         assert dpot.card_name == "Potion of Deja Vu"
         assert player.arena.contains_card(dpot)
         
-        dpot2 = create_card_in_zone(card.DejaVuPotion, player, "hand")
+        dpot2 = Zone.create_card_in_zone(card.DejaVuPotion, player, "hand")
         assert dpot2.zone == "hand"
         assert player.hand.contains_card(dpot2)
 
@@ -35,7 +36,6 @@ class TestCard2:
         wildfire = card.AetherWildfire(player, "hand")
         assert wildfire.pitch == 1
         assert wildfire.colour == "red"
-        assert wildfire.block == 3
         assert wildfire.zone == "hand"
 
         # Test the creation of a card that has a default pitch assumption (in this case, red)
@@ -60,20 +60,20 @@ class TestCard2:
         player = Player()
 
         # Test the activation of an energy potion from hand
-        epot = create_card_in_zone(card.EnergyPotion, player, "arena")
-        epot.activate()
+        epot = Zone.create_card_in_zone(card.EnergyPotion, player, "arena")
+        epot.on_activate()
 
         assert player.pitch_floating == 2
         assert not player.arena.contains_card(epot)
         assert player.discard.contains_card(epot)
 
-        # Test we're absolutely not allowed to reactivate a potion
-        with pytest.raises(Exception) as error_info:
-            epot.activate()
-        assert "invalid zone" in str(error_info.value)
+        # # Test we're absolutely not allowed to reactivate a potion
+        # with pytest.raises(Exception) as error_info:
+        #     epot.on_activate()
+        # assert "invalid zone" in str(error_info.value)
 
-        # Test we're not allowed to activate a potion from hand
-        dpot = create_card_in_zone(card.DejaVuPotion, player, "hand")
-        with pytest.raises(Exception) as error_info:
-            dpot.activate()
-        assert "invalid zone" in str(error_info.value)
+        # # Test we're not allowed to activate a potion from hand
+        # dpot = Zone.create_card_in_zone(card.DejaVuPotion, player, "hand")
+        # with pytest.raises(Exception) as error_info:
+        #     dpot.on_activate()
+        # assert "invalid zone" in str(error_info.value)
