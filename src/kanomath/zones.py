@@ -128,6 +128,13 @@ class Zone:
                 count += 1
         return count
 
+    def count_cards_pitch(self, target_pitch: int) -> int:
+        count = 0
+        for card in self.cards:
+            if card.pitch == target_pitch:
+                count += 1
+        return count
+
     def remove_card(self, card) -> Card:
 
         # TODO: replace with try cach for value error

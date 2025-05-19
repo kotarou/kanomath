@@ -16,8 +16,7 @@ class Game:
 
     @property
     def game_should_continue(self) -> bool:
-        # TODO: opponent or player dead
-        return True
+        return self.player.braino.state != "combo" and self.player_num_turns < 10 and self.player.deck.size > 1
 
     def __init__(self):
         pass
@@ -126,16 +125,13 @@ class Game:
             self.run_first_turn(self.opponent)
             self.run_player_turn()
     
-        idx = 0
-
         while self.game_should_continue:
             self.run_opponent_turn(False)
             self.run_player_turn()
 
-            if idx == 3:
-                break
-            else:
-                idx +=1 
+        logger.system(f"Game reached endstate {self.player.braino.state} on turn {self.player_num_turns}, with {self.player.deck.size} cards left in deck.")
+
+
             
             
 

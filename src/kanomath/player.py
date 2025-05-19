@@ -517,8 +517,20 @@ class Braino:
         self.count_kindles      = self.player.count_combo_access_card("Kindle", allow_banish = False)
         self.hand_kindle_count  = self.player.hand.count_cards_name("Kindle")
 
+        num_blues = self.player.hand.count_cards_pitch(3)
+
         self.topdeck_actions = []
         self.kanos_dig_opponent_turn = 0
+
+        # Ignoring resources for now
+        if self.state == "setup":
+            if self.has_wf and (self.has_blazing or self.has_lesson):
+            
+                if num_blues == 3 or (num_blues == 2 and self.num_epots > 0):
+                    self.state = "combo"
+        
+        
+
 
     @property
     def hand_usable_pitch(self) -> int:
@@ -979,7 +991,7 @@ class Braino:
             if card_is_potion:
                 return "play"
             
-            if card_is_combo or card_is_extender and self.has_wf:
+            if (card_is_combo or card_is_extender) and self.has_wf and not self.player.is_player_turn:
                 return "assess_combo"
         
         if self.state == "topdeck_combo" or self.state == "combo":
