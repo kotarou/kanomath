@@ -881,21 +881,17 @@ class Braino:
 
         if wants_to_arsenal:
             if self.player.arsenal.has_card:
-                if arsenal_target_priority.index(self.player.arsenal.get_card().card_name) < arsenal_target_priority.index(card_arsenal_options[0].card_name): # type: ignore
 
-                    # If the arsenal is a higher prioirty than the "best" option, don't arsenal a card
-                    # Unless, we're going to play the arsenal out anyway
+                # Quick hack to make priorities work in the correct order
+                arsenal_priority_arsenal    = 10 - arsenal_target_priority.index(self.player.arsenal.get_card().card_name) # type: ignore
+                arsenal_priority_candidate  = 10 - arsenal_target_priority.index(card_arsenal_options[0].card_name)
 
-                    if len(card_play_options) and card_play_options[0].zone == "arsenal":
-                        card_play_options[0].intent = "play"
-                        card_arsenal_options[0].intent = "arsenal"
-
+                if arsenal_priority_arsenal >= arsenal_priority_candidate: 
+                    card_arsenal_options[0].intent = "hold"
                 else:
-
-                    # The card in arsenal is a lower priority than one in hand
-                    # Its now our first priority to play
                     self.player.arsenal.get_card().intent = "play" # type: ignore
                     card_arsenal_options[0].intent = "arsenal"
+
             else:
                 card_arsenal_options[0].intent = "arsenal"
 

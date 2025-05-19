@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+from loguru import logger
 from .card import Card, CardCyle, WizardInstant, WizardNAA
 
 from typing import TYPE_CHECKING
@@ -70,7 +72,8 @@ class Kindle(WizardInstant):
         if self.controller.hand.size == 0:
             self.controller.draw(1) 
         else:
-            raise Exception("You idiot you played a kindle without being able to draw")
+            logger.debug("Kindle was played without being able to draw")
+            # raise Exception("You idiot you played a kindle without being able to draw")
 
 class EyeOfOphidia(Gem):
 
