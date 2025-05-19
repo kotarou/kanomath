@@ -24,31 +24,12 @@ if __name__ == "__main__":
 
     logger.level("action", no=15, color="<light-cyan>", icon="A")
     logger.level("effect", no=15, color="<light-blue>", icon="E")
+    logger.level("decision", no=15, color="<light-green>", icon="D")
 
     logger.__class__.action = partialmethod(logger.__class__.log, "action")
     logger.__class__.effect = partialmethod(logger.__class__.log, "effect") 
+    logger.__class__.decision = partialmethod(logger.__class__.log, "decision") 
 
-    # setattr(logger, 'action', partialmethod(logger.__class__.log, "action"))
-
-
-    # def action(self, input: str):
-    #     logger.log("ACTION", input)
-
-    # logger.action = types.MethodType(action, logger) # type: ignore
-
-    # player: Player = Player()
-    # opponent: Opponent = Opponent()
-
-    # setupGame(player, opponent)
-
-    # # TODO: Manage first turn of game
-
-    # while(player.deck.cardsLeft and not player.comboExecuted and player.turn < 20):
-    #     player.simulatePlayerTurn()
-    #     cleanUpTurn(player, opponent)
-        
-    #     player.simulateOpponentTurn()
-    #     cleanUpTurn(player, opponent)
 
     game: Game  = Game()
 

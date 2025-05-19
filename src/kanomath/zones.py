@@ -241,7 +241,7 @@ class Deck(Zone):
 
         for i in range(num_cards):
             card = self.cards.popleft()
-            move_card_to_zone(card, target_zone)
+            Zone.move_card_to_zone(card, target_zone)
 
 
 class Hand(Zone):

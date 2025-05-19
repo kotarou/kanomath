@@ -146,6 +146,19 @@ class Card:
     def on_turn_end(self):
         pass
 
+    def move_to_zone(self, new_zone_name: str, position:str = "bottom"):
+        '''
+        Move card to a new zone. 
+
+        Takes a poisition argumenent either "top", or "bottom
+        '''
+        old_zone = self.controller.get_zone_by_name(self.zone)
+        old_zone.remove_card(self)
+
+        new_zone    = self.controller.get_zone_by_name(new_zone_name)
+        add_index   = new_zone.size if position == "bottom" else 0
+        new_zone.add_card(self, add_index)
+
 class ActivatableNAA(Card):
     card_type           = "action"
     card_subtype        = ""
@@ -154,7 +167,7 @@ class ActivatableNAA(Card):
     def on_activate(self):
         Zone.move_card_to_zone(self, self.activate_to_zone)
 
-class CardCyle():
+class CardCyle(): 
     is_rainbow = True
 
 class GenericNAA(Card):

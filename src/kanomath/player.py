@@ -189,8 +189,8 @@ class Player:
         opt_top, opt_bot = self.braino.resolve_opt(opt_cards)
         self.deck.de_opt(opt_top, opt_bot)
         
-        logger.effect(f"Opt saw {len(opt_top) + len(opt_bot)} cards. Put {opt_top} to top and {opt_bot} to bottom.")
-        logger.action(f"Opt saw {len(opt_top) + len(opt_bot)} cards. Put {opt_top} to top and {opt_bot} to bottom.")
+        logger.decision(f"Opt saw {len(opt_top) + len(opt_bot)} cards. Put {opt_top} to top and {opt_bot} to bottom.")
+
 
     def kano(self):
 
@@ -203,33 +203,30 @@ class Player:
         if len(self.braino.topdeck_actions) and self.braino.topdeck_actions[0] != "kano":
             raise Exception(f"Attempting to kano when the correct topdeck action is {self.braino.topdeck_actions[0]}.")
 
-        print(f"  Player activated kano. Pitch {self.pitch_floating} -> {self.pitch_floating - 3}.")
-
         self.spend_pitch(3, "kano")
-
-        card = typing.cast(Card, self.deck.peek())
-
-        action = self.braino.decide_kano_result(card)
-
-        print(f"    Braino has decided to {action} the {card}.")
+        card    = typing.cast(Card, self.deck.peek())
+        action  = self.braino.decide_kano_result(card)
 
         if action == "brick":
+            logger.action(f"Player activated kano, seeing {card} and bricking.")
             # We could set num_kanos to 0 here to stop kanoing
             # But contonueing to kano into bricks allows for more hand cycling
             return
         
         elif action == "assess_combo":
+            logger.action(f"Player activated kano, seeing {card}. Switching to assess a cheeky combo kill.")
             # We might be able to go off with this card
             # TODO: implement this
             # For now, assume seeing a combo piece in this situation is just a brick
             return
     
         elif action == "banish":
-            # Just banish the card and ignore it
-            zone.Zone.move_card_to_zone(card, "banish")
+            logger.action(f"Player activated kano, seeing {card}. Banishing it to thin deck.")
+            card.move_to_zone("banish")
 
         elif action == "play":
-            zone.Zone.move_card_to_zone(card, "banish")
+            logger.action(f"Player activated kano, seeing {card}. Banishing it to play as an instant.")
+            card.move_to_zone("banish")
             self.play_card(card, as_instant=True)
 
         else:
@@ -243,7 +240,6 @@ class Player:
         #     raise Exception("Attempting to play a card we do not control ({card.controller} != {self.id})")
 
         print(f"  Playing {card} from {card.zone} as an {'action' if card.card_type == "action" and not as_instant else 'instant'}. Pitch {self.pitch_floating} -> {self.pitch_floating - card.cost}")
-
 
         if card.card_type == "action" and not as_instant:
             if self.action_points == 0 or self.is_player_turn == False:
@@ -289,6 +285,8 @@ class Player:
 
         # TODO: special handling of first turn opts & etc
 
+        self.prepare_turn()
+
         num_kanos_aim       = self.braino.kanos_dig_opponent_turn
         num_kanos_completed = 0
 
@@ -326,44 +324,52 @@ class Player:
 
     def play_own_turn(self, game_first_turn = False):
 
-        self.action_points      = 1
-        self.is_player_turn     = True
+        self.prepare_turn()
 
+        # TODO: Don't cheat by pitching all cards at the beginning
+        # This is a pretty minor assumption though, as there is no combination of pitch cards that can't be cleared by correct pitching to kano and crible in a turn cycle
+        # Pearl cards are a different story, of course.
         potential_pitch_cards   = self.get_cards_by_intent("pitch")
-        potential_action_cards  = self.get_cards_by_intent("play")
-        potential_arsenal_cards = self.get_cards_by_intent("arsenal")
+        potential_pitch_cards.sort(key=lambda x: x.pitch)
 
-        # Strictly this is the wrong order to do things, and instead pitch cards should be used as demanded, but this works for now
-        # TODO: make card pitching actually follow the rules of the game
-        for card in reversed(potential_pitch_cards):
+        # Reverse to iterate nice
+        for card in potential_pitch_cards:
             self.pitch_card(card)
+        
+        potential_action_cards  = self.get_cards_by_intent("play")
     
-        if len (potential_action_cards) > 1:
+        # Play out any actions we can
+        if len (potential_action_cards):
             # Very simple trick to ignore the issue of wanting to play more than one card: just hold the others
             for potential_action in potential_action_cards[1:]:
-                print(f"  Player wants to play {potential_action}, but another action has been decided. Holding instead.")
+                logger.decision(f"Player has too many ({len(potential_action_cards)}) actions to take. Switching intent for {potential_action_cards[1:]} to hold.")
                 potential_action.intent = "hold"
-        
-        if len (potential_action_cards) > 0:
 
             potential_card = potential_action_cards[0]
 
             if self.pitch_floating < potential_card.cost:
                 if potential_card.zone == "hand":
                     # We can't actually pay for the card, so switch it to a pitch card
-                    print(f"  Player wants to play {potential_card}, but cannot afford it. Pitching instead.")
+                    logger.warning(f"Player wants to play {potential_card} from hand, but cannot afford it. Pitching it instead.")
                     potential_card.intent = "pitch"
                     self.pitch_card(potential_card)
                 else:
-                    print(f"  Player is stuck with {potential_card} in arsenal as they can't play it out.")
+                    logger.error(f"Player wants to play {potential_card} from arsenal, but cannot afford it. Waiting for next turn.")
                     # Fuck, we're stuck with it turn turn
                     pass
             else:
-                self.play_card(potential_action_cards[0])
+
+                should_crucible = self.braino.decide_turn_crucible(potential_card)
+                if should_crucible:
+                    self.activate_crucible()
+                
+                self.play_card(potential_card)
 
         while self.pitch_floating >= 3:
             self.kano()
-
+        
+        
+        potential_arsenal_cards = self.get_cards_by_intent("arsenal")
         if len (potential_arsenal_cards) > 1:
             raise Exception(f"Player has indicated more than one card to put in arsenal: {potential_arsenal_cards}.")
         
@@ -374,6 +380,32 @@ class Player:
         
         self.end_turn()
 
+    def activate_crucible(self):
+        
+        if self.pitch_floating < 1:
+            raise Exception(f"Attempting to use crucible with only {self.pitch_floating} resources available (need 1).")
+
+        if self.crucible_used:
+            raise Exception(f"Attempting to use crucible a second time in one turn.")
+
+        self.register_amp_next(1, "crucible")
+        self.crucible_used = True
+
+
+    def prepare_turn(self):
+
+        self.is_player_turn = not self.is_player_turn
+        
+        if self.is_player_turn:
+            self.action_points  = 1
+
+        self.crucible_used      = False
+        self.wizard_naa_played  = 0
+
+        self.braino.evaluate_state()
+
+        if not self.is_player_turn:
+            self.braino.cycle_make_initial_decisions()
 
     def end_turn(self):
 
@@ -394,10 +426,9 @@ class Player:
         if self.is_player_turn:
             self.hand.draw_up()
 
-
         self.action_points      = 0        
-        self.is_player_turn     = False
         self.pitch_floating     = 0
+        
 
 
 # Braino is responsible for all player decisions
@@ -406,9 +437,6 @@ class Braino:
 
     state : str
     player: Player
-
-    use_tunic: bool
-    use_spellfire: bool
 
     critical_resources: int = 14
 
@@ -425,11 +453,19 @@ class Braino:
 
     def __init__(self, player: Player):
 
+        # Initial state
         self.player = player
-        self.state = "setup"
+        self.state  = "setup"
 
-        self.use_tunic = False
-        self.use_spellfire = True
+        # Play patterns & decision
+        self.use_tunic          = False
+        self.use_spellfire      = True
+
+        self.proactively_arsenal_blazing    = False
+        self.proactively_arsenal_gaze       = False
+
+
+
 
         pass
 
@@ -965,7 +1001,104 @@ class Braino:
             return "play"
         
         return "banish"
+    
+    def decide_turn_crucible(self, card: Card):
+
+        if self.player.pitch_floating >= card.cost + 1:
+            return True
+        else:
+            return False
             
+    def assign_arsenal_priority(self, card: Card):
+        
+        # Combo priority: Wildfire = Kindle > Lesson > (maybe) Blazing Aether
+        # Then, potion priority Energy Potion > Potion of Deja Vu > Clarity Potion
+        # Then, actions: Aether Spindle > Aether Flare
+        
+        # current_arsenal = self.player.arsenal.get_card()
+        
+        if card.card_name == "Aether Wildfire":
+            return 10
+        
+        if card.card_name == "Kindle":
+            return 10
 
+        if card.card_name == "Blazing Aether":
+            
+            num_left = self.player.deck.count_cards_name("Blazing Aether") == 0
 
+            if self.proactively_arsenal_blazing or num_left == 0:
+                return 9
+            else:
+                return 2
+            
+        if card.card_name == "Lesson in Lava":
+            
+            if not self.has_blazing:
+                return 8
+            else:
+                return 4
+            
+        if card.card_name == "Cindering Foresight" and card.colour == "red":
+            return 5
+            
+        if card.card_name == "Energy Potion":
+            return 6
+        if card.card_name == "Potion of Deja Vu":
+            return 5        
+        if card.card_name == "Clarity Potion":
+            return 4
+
+        if card.card_name == "Aether Spindle" and card.colour == "red":
+            return 3       
+        if card.card_name == "Aether Flare" and card.colour == "red":
+            return 2
+        
+        if card.card_name == "Gaze the Ages" and self.proactively_arsenal_gaze:
+            return 1
+             
+        return 0
+
+    def assign_action_priority(self, card: Card):
+                      
+        if card.card_name == "Energy Potion":
+            return 10
+        if card.card_name == "Potion of Deja Vu":
+
+            if self.num_dpots:
+                return 4
+            else:
+                return 9    
+               
+        if card.card_name == "Clarity Potion":
+            if self.num_cpots:
+                return 3
+            else:
+                return 8
+    
+        # High priority if to find a wildfire if we lack one
+        # TODO: if we resolve this in this fashion, should resolve kanos then play action
+        if card.card_name == "Lesson in Lava" and not self.has_wf:
+            return 7
+            
+        if card.card_name == "Aether Spindle" and card.colour == "red":
+            if self.player.pitch_floating >= 6:
+                return 6 
+            elif self.player.pitch_floating >= 3:
+                return 4
+            elif self.player.pitch_floating >= 2:
+                return 3
+            else:
+                return 0
+        
+        if card.card_name == "Aether Flare" and card.colour == "red":
+            if self.player.pitch_floating >= 5:
+                return 5
+            else:
+                return 0
+
+        # TODO: Consider playing gaze at action speed
+        # TODO: Consider playing cindering at action speed
+             
+        return 0
 
