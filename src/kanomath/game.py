@@ -42,9 +42,10 @@ class Game:
             card.BlazingAether(self.player, "test"),
             card.BlazingAether(self.player, "test"),
             card.BlazingAether(self.player, "test"),
-           
-            card.CinderingForesight(self.player, "test", "red"),
-            card.CinderingForesight(self.player, "test", "red"),
+
+            # TODO: logic for this card is annoying AF           
+            # card.CinderingForesight(self.player, "test", "red"),
+            # card.CinderingForesight(self.player, "test", "red"),
 
             card.Kindle(self.player, "test"),
             card.Kindle(self.player, "test"),
@@ -143,25 +144,25 @@ class Game:
 
     def run_first_turn(self, turn_player: Player | Opponent):
 
-        logger.info("Running first turn.")
+        # logger.info("Running first turn.")
 
         if turn_player.id == "player":
 
             # self.player.braino.evaluate_state()
             # self.player.braino.cycle_make_initial_decisions()
 
-            self.run_player_turn()
+            self.run_player_turn(True)
             # TODO: Opponent draw up
         else:
-            self.run_opponent_turn(game_first_turn = True)
+            self.run_opponent_turn(True)
             # TODO: Player draw up
         # self.cleanup_turn()    
 
 
     def run_opponent_turn(self, game_first_turn):
 
-        logger.info("-----")
-        logger.info(f"Running opponent turn. Cards in hand: {self.player.hand}")
+        # logger.info("-----")
+        # logger.info(f"Running opponent turn. Hand: {self.player.hand}, Arsenal: {self.player.arsenal} ")
 
         # self.player.braino.evaluate_state()
         # self.player.braino.cycle_make_initial_decisions()
@@ -170,14 +171,14 @@ class Game:
         # self.cleanup_turn()
 
     
-    def run_player_turn(self):
+    def run_player_turn(self, game_first_turn: bool = False):
 
-        logger.info(f"Running player turn. Hand: {self.player.hand}. Arsenal: {self.player.arsenal}. Arena: {self.player.arena}")
+        # logger.info(f"Running player turn. Hand: {self.player.hand}. Arsenal: {self.player.arsenal}. Arena: {self.player.arena}")
 
         self.player_num_turns += 1
 
         # self.player.braino.evaluate_state()
-        self.player.play_own_turn()
+        self.player.play_own_turn(game_first_turn)
         
     #     self.cleanup_turn()
 

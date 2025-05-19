@@ -21,15 +21,20 @@ if __name__ == "__main__":
 
     logger.remove(0) # remove the default handler configuration
     logger.add(sys.stdout, level="DEBUG", serialize=False, format=logger_format)
-
+    logger.level("DEBUG", color="<dim><white>")
+    
     logger.level("action", no=15, color="<light-cyan>", icon="A")
     logger.level("effect", no=15, color="<light-blue>", icon="E")
     logger.level("decision", no=15, color="<light-green>", icon="D")
+    logger.level("system", no=15, color="<magenta>", icon="D")
+
 
     logger.__class__.action = partialmethod(logger.__class__.log, "action")
     logger.__class__.effect = partialmethod(logger.__class__.log, "effect") 
     logger.__class__.decision = partialmethod(logger.__class__.log, "decision") 
+    logger.__class__.system = partialmethod(logger.__class__.log, "system")
 
+ 
 
     game: Game  = Game()
 
