@@ -1,13 +1,16 @@
 from __future__ import annotations
 from colored import Fore, Style
-from enum import Enum
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
+
+from kanomath.zones import Zone
 if TYPE_CHECKING:
     from kanomath.player import Player
 
+# from kanomath.functions import move_card_to_zone
 
-from kanomath.functions import move_card_to_zone
+COMBO_CORE      = ["Aether Wildfire", "Blazing Aether", "Lesson in Lava"]
+COMBO_EXTENDERS = ["Open the Flood Gates", "Overflow the Aetherwell", "Tome of Aetherwind", "Tome of Fyendal", "Sonic Boom"]
 
 # TODO: replace this with logger colours
 def print_colour(input: int | str):
@@ -24,80 +27,78 @@ def print_colour(input: int | str):
         case _:
             return Fore.white
 
-def determine_pitch(colour: str) -> int:
-
-    match colour:
-        case "r" | "red":
-            return 1
-        case "y" | "yellow":
-            return 2
-        case "b" | "blue":
-            return 3
-        case _:
-            # Also handles pearl
-            return 0
-
-def determine_colour(input: str | int) -> str:
-
-    # Match three cases: single letter, number, or sent the correct form anyway
-
-    match input:
-        case "r" | 1 | "red":
-            return "red"
-        case "y" | 2 | "yellow":
-            return "yellow"
-        case "b" | 3 | "blue":
-            return "blue"
-        case _:
-            # Also handles pearl
-            return "pearl"
-
-def determine_arcane_damage(base: int, colour: str) -> int:
-    delta = 0
-
-    match colour:
-        case "red" | "r":
-            delta = 0
-        case "yellow" | "y":
-            delta = 1        
-        case "blue" | "b":
-            delta = 2        
-        case _:
-             delta = 0
-
-    return base - delta
-
 class Card:
 
-    # Game state details
-    controller: Player
-    owner: Player
-    zone: str
-    # TODO: explicitly type targets
-    # target: 
+    @staticmethod
+    def determine_pitch(card_colour: str) -> int:
+        ''' Determine a card's pitch value from its colour. '''
+        match card_colour:
+            case "r" | "red":
+                return 1
+            case "y" | "yellow":
+                return 2
+            case "b" | "blue":
+                return 3
+            case "p" | "peral":
+                return 0
+            case _:
+                raise ValueError(f"format_colour_string called with invalid string ({card_colour}).")
 
-    # Intrinsic card details
-    # pitch: int
-    block: int
-    card_class: str
-    card_type: str
-    card_name: str
-    card_name_short: str
 
-    # Card details that are later controlled with getter and setter functions for whatever reason
-    # _cost: int
-    cost: int
+    @staticmethod
+    def format_colour_string(colour_string: str | int) -> str:
+        ''' Takes an short-hand input string (e.g. "r", "2", "yellow") and returns a properly formatted colour name'''
+        match colour_string:
+            case "r" | 1 | "red":
+                return "red"
+            case "y" | 2 | "yellow":
+                return "yellow"
+            case "b" | 3 | "blue":
+                return "blue"
+            case _:
+                raise ValueError(f"format_colour_string called with invalid string ({colour_string}).")
 
-    # Properties that classes may override
-    keywords: list[str]
-    
-    # Special property for tracking what we plan to do with a card
-    intent: str = ""
+    @staticmethod
+    def determine_numeric_property(default_value: int, card_colour: str) -> int:
+        ''' Assuming all numeric properties differ by 1, returns the numeric property when compared to a red version of the card.'''
+        delta = 0
 
-    # When we play the card, where will it resolve to?
-    resolve_to_zone = "discard"
+        match card_colour:
+            case "red" | "r":
+                delta = 0
+            case "yellow" | "y":
+                delta = 1        
+            case "blue" | "b":
+                delta = 2        
+            case _:
+                delta = 0
 
-    # Simple coloured detail of the card
+        return default_value - delta
+
+    def __init__(self, owner: Player, zone: str = "deck", *args, **kwargs):
+        
+        # Core card components
+        self.owner: Player      = owner
+        self.controller: Player = owner
+        self.zone: str          = zone
+      
+        if not hasattr(self, "colour"):
+            self.colour =  Card.format_colour_string(kwargs.get('colour', "pearl"))
+
+        # Defaults
+        self.keywords           = list[str]()
+        self.is_rainbow         = False
+        self.resolve_to_zone    = "discard"
+
+        # Stuff that will be set later
+        self.block: int
+        self.card_class: str
+        self.card_type: str
+        self.card_name: str
+        self.cost: int
+
+        # What the player plans to do with this card, this turn cycle
+        self.intent: str        = ""
 
     def __str__(self):
 
@@ -115,129 +116,83 @@ class Card:
     def __repr__(self):
         return self.__str__()
 
-    def __init__(self, owner: Player, zone = "deck", *args, **kwargs):
-        self.zone = zone
-        self.owner = owner
-        self.controller = owner
-
-        # A subclass might have already set our pitch
-        # If not, set it to pearl, not because thats a sane default, but because its easy to spot
-        if not hasattr(self, "colour"):
-            self.colour   = kwargs.get('colour', "pearl")
-        
-        # Some subclasses will have initialized this already. 
-        if not hasattr(self, "keywords"):
-            self.keywords = []
-
-        if not hasattr(self, "card_name_short"):
-            self.card_name_short = self.card_name
-
-        if not hasattr(self, "is_rainbow"):
-            self.is_rainbow = False
-
-        if not hasattr(self, "card_type"):
-            self.card_type = "naa"
-
-    # In the future, variable costs may become relevant. 
-    # This property will interface with that code
-    # @property
-    # def cost(self) -> int:
-    #     return self._cost
-    # @cost.setter
-    # def cost(self, value):
-    #     self._cost = value
-    
-    # Our pitch value is determined by our colour, and is not otherwise an intrinsic aspect of the card
     @property
     def pitch(self) -> int:
-        return determine_pitch(self.colour)
+        return Card.determine_pitch(self.colour)
     
-    # Ensure we don't accidentally set our colour using a shorthand "r"
-    @property
-    def colour(self) -> str:
-        return self._colour
-    @colour.setter
-    def colour(self, value):
-        self._colour = determine_colour(value)
-
-    # @property
-    # def dealsArcane(self) -> bool:
-    #     return self.arcane and self.arcane > 0
-
     def on_play(self):
-        move_card_to_zone(self, self.resolve_to_zone)
+        Zone.move_card_to_zone(self, self.resolve_to_zone)
         pass
 
+    def on_resolve(self):
+        ''' 
+        Once we have finished playing a card, control what hapens to it.
+
+        Generally, we move the card to its resolution zone: subclasses whould take care of all other details.
+        '''
+
+        # Rough assumption that cards resolving to deck always go to the bottom
+        if self.resolve_to_zone == "deck":
+            Zone.move_card_to_zone(self, self.resolve_to_zone, "bottom")
+        else:
+            Zone.move_card_to_zone(self, self.resolve_to_zone)
+
+
     def on_pitch(self) -> int:
-        move_card_to_zone(self, "pitch")
+        Zone.move_card_to_zone(self, "pitch")
         self.controller.gain_pitch(self.pitch)
         return self.pitch
 
-COMBO_CORE      = ["Aether Wildfire", "Blazing Aether", "Lesson in Lava"]
-COMBO_EXTENDERS = ["Open the Flood Gates", "Overflow the Aetherwell", "Tome of Aetherwind", "Tome of Fyendal", "Sonic Boom"]
-
-class ActivatableNAA(Card):
-    card_type = "action"
-    card_subtype = ""
-
-    activate_to_zone = "discard"
-    activate_from_zone: str
-
-    def on_activate(self):
+    def on_turn_end(self):
         pass
 
-    def activate(self):
-        if self.can_activate:
-            self.on_activate()
-            move_card_to_zone(self, self.activate_to_zone)
-        else:
-            raise Exception(f"Invalid activation of {self}. Reason: {self.activation_error_reason}")
+class ActivatableNAA(Card):
+    card_type           = "action"
+    card_subtype        = ""
+    activate_to_zone    = "discard"
 
-    @property
-    def can_activate(self):
-        return self.zone == self.activate_from_zone
+    def on_activate(self):
+        Zone.move_card_to_zone(self, self.activate_to_zone)
 
-    @property
-    def activation_error_reason(self):
-        if self.zone != self.activate_from_zone:
-            return "invalid zone"
-        return "unknown"
-
+class CardCyle():
+    is_rainbow = True
 
 class GenericNAA(Card):
     card_class      = "generic"
     card_type       = "action"
     card_sub_type   = ""
 
-class CardCyle():
-    is_rainbow = True
-
-class WizardNAA(Card):
+class WizardCard():
     card_class      = "wizard"
-    card_type       = "action"
-    card_sub_type   = ""
-
-    arcane_damage_dealt = 0
-
-    def __init__(self, owner: Player, zone = "deck", *args, **kwargs):
-
-        # Almost all wizard NAA block 3, so setit here as a default
-        if not hasattr(self, "block"):
-            self.block   = 3
-
-        Card.__init__(self, owner, zone, *args, **kwargs)
-
-    def on_play(self):
-        Card.on_play(self)
 
 class WizardInstant(Card):
     
     card_class  = "wizard"
     card_type   = "instant"
-    # We don;t bother differentating pearl and 0 block
-    block = 0
+    # In future, might need to use something more robust than 0 to represent instant blocks, if I'm trying to get rid of them from hand. 
+    block       = 0
+
+class WizardNAA(Card):
+
+    card_class      = "wizard"
+    card_type       = "action"
+    card_sub_type   = ""
+
+    @override
+    def on_resolve(self):
+        self.controller.wizard_naa_played += 1
+        Card.on_resolve(self)
+
+class WizardSpell(WizardNAA):
+
+    # Blazing Aether, Chain Lightning, etc, will need to override this
+    @property
+    def deals_arcane(self) -> bool:
+        return True
     
+    def on_damage(self, damage_dealt: int):
+        pass
 
-    def __init__(self, owner: Player, zone = "deck", *args, **kwargs):
-        Card.__init__(self, owner, zone, *args, **kwargs)
-
+    def on_play(self):
+        # TODO: deal arcane damage
+        pass

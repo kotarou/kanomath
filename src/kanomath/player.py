@@ -2,7 +2,7 @@ from loguru import logger
 from kanomath.cards.card import COMBO_CORE, COMBO_EXTENDERS, Card
 from kanomath.cards.potions import POTIONS
 import typing
-from kanomath.functions import card_is_blue, match_card_name, move_card_to_zone, move_cards_to_zone, remove_all_matching, remove_first_matching
+from kanomath.functions import card_is_blue, match_card_name, remove_all_matching, remove_first_matching # move_card_to_zone, move_cards_to_zone,
 import kanomath.zones as zone
 from functools import reduce
 
@@ -27,6 +27,7 @@ class Player:
     # Resources
     action_points = 0
     pitch_floating = 0
+    arcane_damage_dealt = 0
 
     # Turn details
     wizard_naa_played = 0
@@ -34,9 +35,9 @@ class Player:
     is_player_turn: bool = False
 
     # Spell stuff
-    amp_wildfire = 0
-    amp_next = 0
-    amp = 0
+    _amp_wildfire = 0
+    _amp_next = 0
+    _amp = 0
 
     # Equipment status
     rags_activated = False
@@ -137,19 +138,37 @@ class Player:
     def count_combo_access_card(self, card_name: str, allow_banish: bool = True) -> int:
         return self.hand.count_cards_name(card_name) + self.arsenal.count_cards_name(card_name) + (allow_banish and self.banish.count_cards_name(card_name) if allow_banish else 0)
 
+    def make_token(self, token_name):
+        pass
+
+    def draw(self, draw_num: int = 1):
+
+        if draw_num < 1:
+            raise ValueError(f"Cannot draw fewer than 1 cards ({draw_num}).")
+        
+        self.deck.draw(draw_num)
+
     def register_amp_next(self, amp_num: int, source: str):
 
         if(amp_num < 0):
             raise Exception(f"Cannot amp next spell less than 0 ({amp_num}).")
 
-        self.amp_next += 1
+        self._amp_next += 1
+    
+    def register_wildfire_amp(self, amp_num: int):
+
+        if(amp_num < 0):
+            raise Exception(f"Cannot amp next spell less than 0 ({amp_num}).")
+
+        self._amp_wildfire += 1
+
 
     def register_amp(self, amp_num: int, source: str):
         
         if(amp_num < 0):
             raise Exception(f"Cannot amp less than 0 ({amp_num}).")
         
-        self.amp += 1
+        self._amp += 1
 
     def gain_pitch(self, num_resources: int):
         
@@ -170,7 +189,7 @@ class Player:
         opt_top, opt_bot = self.braino.resolve_opt(opt_cards)
         self.deck.de_opt(opt_top, opt_bot)
         
-        logger.log("EFFECT", f"Opt saw {len(opt_top) + len(opt_bot)} cards. Put {opt_top} to top and {opt_bot} to bottom.")
+        logger.effect(f"Opt saw {len(opt_top) + len(opt_bot)} cards. Put {opt_top} to top and {opt_bot} to bottom.")
         logger.action(f"Opt saw {len(opt_top) + len(opt_bot)} cards. Put {opt_top} to top and {opt_bot} to bottom.")
 
     def kano(self):
@@ -207,10 +226,10 @@ class Player:
     
         elif action == "banish":
             # Just banish the card and ignore it
-            move_card_to_zone(card, "banish")
+            zone.Zone.move_card_to_zone(card, "banish")
 
         elif action == "play":
-            move_card_to_zone(card, "banish")
+            zone.Zone.move_card_to_zone(card, "banish")
             self.play_card(card, as_instant=True)
 
         else:
@@ -255,7 +274,7 @@ class Player:
             raise Exception(f"Attempting to arsenal {card} when {self.arsenal.get_card()} is already in the arsenal).")
 
         print(f"  Arsenalling {card}.")
-        move_card_to_zone(card, "arsenal")
+        zone.Zone.move_card_to_zone(card, "arsenal")
 
     def pitch_card(self, card: Card):
 
@@ -353,12 +372,32 @@ class Player:
             
         print(f"  Player drew {self.current_intellect - self.hand.size} cards for end of their turn.")
         
-        self.hand.draw_up()
-        self.action_points      = 0        
-        self.is_player_turn     = True
-        self.pitch_floating     = 0
+        self.end_turn()
 
-        pass
+
+    def end_turn(self):
+
+        # First, clean up pitch & banish
+        for idx in reversed(range(self.pitch.size)):
+            card = self.pitch.cards[idx]
+
+            zone.Zone.move_card_to_zone(card, "deck", "bottom")
+            card.on_turn_end()
+        
+        for idx in reversed(range(self.banish.size)):
+            card = self.banish.cards[idx]
+
+            zone.Zone.move_card_to_zone(card, "exile")
+            card.on_turn_end()
+
+
+        if self.is_player_turn:
+            self.hand.draw_up()
+
+
+        self.action_points      = 0        
+        self.is_player_turn     = False
+        self.pitch_floating     = 0
 
 
 # Braino is responsible for all player decisions
@@ -731,8 +770,8 @@ class Braino:
         pots = remove_all_matching(opt_cards, match_card_name(POTIONS))
         
         # Very simpoe sort order that puts epots at the top
-        pot_order = ["epot", "dpot", "cpot"]
-        pots.sort(key= lambda x: pot_order.index(x.card_name_short))
+        pot_order = ["Energy Potion", "Potion of Deja Vu", "Clarity Potion"]
+        pots.sort(key= lambda x: pot_order.index(x.card_name))
 
         return pots
     
@@ -767,7 +806,7 @@ class Braino:
         # Very simple sort ordering
         # TODO: Actually care about pitch here (complex af)
         extender_priority = ["Open the Flood Gates", "Overflow the Aetherwell"]
-        top.sort(key= lambda x: extender_priority.index(x.card_name_short) if x in extender_priority else 0)
+        top.sort(key= lambda x: extender_priority.index(x.card_name) if x in extender_priority else 0)
         
         return top
     

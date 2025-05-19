@@ -1,8 +1,9 @@
 from loguru import logger
 import kanomath.cards as card
-from kanomath.functions import move_card_to_zone
+# from kanomath.functions import move_card_to_zone
 from kanomath.opponent import Opponent
 from kanomath.player import Player
+from kanomath.zones import Zone
 
 class Game:
 
@@ -188,7 +189,9 @@ class Game:
         # TODO: This should be a method on player, seeing as it assumes the same owner and all
         # move_cards_between_zones(self.player, "banish", "exile")
 
-        for idx in reversed(range(len(self.player.banish.cards))):
+        for idx in reversed(range(self.player.banish.size)):
             card = self.player.banish.cards[idx]
 
-            move_card_to_zone(card, "exile")
+            Zone.move_card_to_zone(card, "exile")
+
+        

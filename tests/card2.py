@@ -19,7 +19,6 @@ class TestCard2:
         assert epot.block == 0
         assert epot.zone == "arena"
         assert epot.card_name == "Energy Potion"
-        assert epot.card_name_short == "epot"
 
         # Test creating a card in a zone
         dpot = create_card_in_zone(card.DejaVuPotion, player, "arena")

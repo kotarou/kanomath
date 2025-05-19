@@ -1,106 +1,109 @@
 from __future__ import annotations
-from .card import CardCyle, WizardNAA, determine_arcane_damage, determine_pitch, ActivatableNAA
+from .card import Card, CardCyle, WizardNAA, WizardSpell, ActivatableNAA
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 if TYPE_CHECKING:
     from kanomath.player import Player
 
+class Zap(WizardSpell, CardCyle):
+    
+    card_name   = "Zap"
+    cost        = 0
 
-class BlazingAether(WizardNAA):
+    def __init__(self, owner: Player, zone: str, colour: str = "b"):
+        WizardSpell.__init__(self, owner, zone, colour=colour)
+        base_arcane = 3
+        self.arcane = Card.determine_numeric_property(base_arcane, colour)  
+        self.colour = Card.format_colour_string(colour)    
+
+class ScaldingRain(WizardSpell, CardCyle):
+    
+    card_name   = "Scalding Rain"
+    cost        = 1
+
+    def __init__(self, owner: Player, zone: str, colour: str = "r"):
+        WizardSpell.__init__(self, owner, zone, colour=colour)
+        base_arcane = 4
+        self.arcane = Card.determine_numeric_property(base_arcane, colour)   
+        self.colour = Card.format_colour_string(colour)   
+
+class VolticBolt(WizardSpell, CardCyle):
+    
+    card_name   = "Voltic Bolt"
+    cost        = 2
+
+    def __init__(self, owner: Player, zone: str, colour: str = "r"):
+        WizardSpell.__init__(self, owner, zone, colour=colour)
+        base_arcane = 5
+        self.arcane = Card.determine_numeric_property(base_arcane, colour)   
+        self.colour = Card.format_colour_string(colour)   
+
+
+class BlazingAether(WizardSpell):
 
     card_name   = "Blazing Aether"
     cost        = 0
+    colour      = "red" 
 
-    def __init__(self, owner: Player, zone: str):
-        self.arcane = 0   
-        self.colour = "red"    
-        WizardNAA.__init__(self, owner, zone)
+    @property
+    def deals_arcane(self) -> bool:
+        return self.arcane > 0
 
-    def on_damage(self):
-        pass
+    @property
+    def arcane(self) -> int:
+        return self.controller.arcane_damage_dealt
 
-# TODO: This can inherit the class of effects of InstantDiscard
-class ArcaneTwining(WizardNAA, ActivatableNAA, CardCyle):
 
-    card_name = "Arcane Twining"
-    cost = 0
-    activate_from_zone = "hand"
+class ArcaneTwining(Zap, ActivatableNAA):
 
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.arcane = determine_arcane_damage(3, colour)      
-        WizardNAA.__init__(self, owner, zone, colour = colour)
+    card_name           = "Arcane Twining"
+    activate_from_zone  = "hand"
+    activate_from_zone  = "discard"
 
     def on_activate(self):
-        # If in the player's hand
-        # amp one
-        # then discard
-        pass
+        self.controller.register_amp(1, "Arcane Twining")
+        ActivatableNAA.on_activate(self)
 
 
-class PhotonSplicing(WizardNAA, CardCyle):
-    
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.card_name = "Photon Splicing"
-        self.arcane = determine_arcane_damage(4, colour)
-        self.cost = 1       
-        WizardNAA.__init__(self, owner, zone, colour = colour)        
+class PhotonSplicing(ScaldingRain, ActivatableNAA):
+
+    card_name           = "Photon Splicing"
+    activate_from_zone  = "hand"
+    activate_from_zone  = "discard"
 
     def on_activate(self):
-        # If in the player's hand
-        # amp one
-        # then discard
-        pass
+        self.controller.register_amp(1, "Photon Splicing")
+        ActivatableNAA.on_activate(self)
 
 
-class AetherDart(WizardNAA, CardCyle):
+class AetherDart(Zap, CardCyle):
     
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.card_name = "Aether Dart"
-        self.arcane = determine_arcane_damage(3, colour)
-        self.cost = 0       
-        WizardNAA.__init__(self, owner, zone, colour = colour)
+    card_name = "Aether Dart"
 
-class EmeritusScolding(WizardNAA, CardCyle):
 
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.card_name = "Emeritus Scolding"
-        self.arcane = determine_arcane_damage(4, colour)
-        self.cost = 2
-        WizardNAA.__init__(self, owner, zone, colour = colour)
-
-    def on_play(self):
-        # In some way handle threatening more damage in their turn
-        pass
-
-class ScaldingRain(WizardNAA, CardCyle):
+class EmeritusScolding(WizardSpell, CardCyle):
     
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.card_name = "Scalding Rain"
-        self.arcane = determine_arcane_damage(4, colour)
-        self.cost = 1       
-        WizardNAA.__init__(self, owner, zone, colour = colour)
-
-class VolticBolt(WizardNAA, CardCyle):
+    card_name   = "Emeritus Scolding"
+    cost        = 2
     
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.card_name = "Voltic Bolt"
-        self.arcane = determine_arcane_damage(5, colour)
-        self.cost = 2      
-        WizardNAA.__init__(self, owner, zone, colour=colour)
-
-class Zap(WizardNAA, CardCyle):
+    def __init__(self, owner: Player, zone: str, colour: str = "r"):
+        WizardSpell.__init__(self, owner, zone, colour=colour)
+        colour_base_arcane = 4
+        self.base_arcane = Card.determine_numeric_property(colour_base_arcane, colour)   
+        self.colour = Card.format_colour_string(colour)   
     
-    card_name = "Zap"
+    @property
+    def arcane(self) -> int:
+        return self.base_arcane if self.controller.is_player_turn else self.base_arcane + 2
 
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.arcane = determine_arcane_damage(3, colour)
-        self.cost = 0       
-        WizardNAA.__init__(self, owner, zone, colour = colour)
 
-class Singe(WizardNAA, CardCyle):
+class Singe(WizardSpell, CardCyle):
     
+    card_name   = "Singe"
+    cost        = 1
+
     def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.card_name = "Singe"
-        self.arcane = determine_arcane_damage(3, colour)
-        self.cost = 1      
-        WizardNAA.__init__(self, owner, zone, colour=colour)
+        WizardSpell.__init__(self, owner, zone, colour=colour)
+        base_arcane = 3
+        self.arcane = Card.determine_numeric_property(base_arcane, colour)  
+        self.colour = Card.format_colour_string(colour)    

@@ -1,43 +1,28 @@
 from __future__ import annotations
 
-from kanomath.functions import move_card_to_zone
+# from kanomath.functions import move_card_to_zone
 from .card import ActivatableNAA
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from kanomath.player import Player
 
-
-
 POTIONS = ["Energy Potion", "Potion of Deja Vu", "Clarity Potion"]
 
 class Potion(ActivatableNAA):
 
-    block = 0
-    cost = 0
-    card_class = "generic"
-
-    resolve_to_zone = "arena"
-    activate_from_zone = "arena"
-
-    def __init__(self, owner: Player, zone: str):
-        self.colour = "blue"
-
-        super().__init__(owner, zone)
-
-    # We don't even need an onplay method for potions
-    # As they just go to their designated zone (arena)
-
-    def on_activate(self):
-        ActivatableNAA.on_activate(self)
+    card_class  = "generic"
+    block       = 0
+    cost        = 0
+    colour      = "blue"
+    
+    resolve_to_zone     = "arena"
+    activate_from_zone  = "arena"
 
 class EnergyPotion(Potion):
 
-    card_name = "Energy Potion"
+    card_name       = "Energy Potion"
     card_name_short = "epot"
-
-    def __init__(self, owner: Player, zone: str):      
-        super().__init__(owner, zone)
 
     def on_activate(self):
         self.controller.gain_pitch(2)
@@ -45,11 +30,8 @@ class EnergyPotion(Potion):
 
 class DejaVuPotion(Potion):
 
-    card_name = "Potion of Deja Vu"
+    card_name       = "Potion of Deja Vu"
     card_name_short = "dpot"
-
-    def __init__(self, owner: Player, zone: str):       
-        Potion.__init__(self, owner, zone)
 
     def on_activate(self):
         # TODO: Generate a decision for the player
@@ -59,14 +41,9 @@ class DejaVuPotion(Potion):
 
 class ClarityPotion(Potion):
 
-    card_name = "Clarity Potion" 
+    card_name       = "Clarity Potion" 
     card_name_short = "cpot"
 
-    def __init__(self, owner: Player, zone: str):
-        Potion.__init__(self, owner, zone)
-
     def on_activate(self):
-        # TODO: Generate a decision for the player
-        #   Then, recieve a ordered lsit of cards from player decision
-        #   And then put those to top of deck 
+        self.controller.opt(2)
         Potion.on_activate(self)

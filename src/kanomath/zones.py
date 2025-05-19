@@ -1,19 +1,38 @@
 from __future__ import annotations
 
 from collections import deque
+# from enum import Enum
 from typing import Deque
 import random
 import copy
 
-from kanomath.functions import add_card_to_zone, move_card_to_zone, move_cards_to_zone
-
-from .cards import Card
+# from kanomath.functions import add_card_to_zone, move_card_to_zone, move_cards_to_zone
 
 import typing
 if typing.TYPE_CHECKING:
     from kanomath.player import Player
+    from .cards import Card
     
 class Zone:
+
+
+    @staticmethod
+    def move_card_to_zone(card: Card, new_zone_name: str, position = "top"):
+        
+        old_zone = card.controller.get_zone_by_name(card.zone)
+        old_zone.remove_card(card)
+
+        Zone.add_card_to_zone(card, new_zone_name, position)
+
+
+    @staticmethod
+    def add_card_to_zone(card: Card, new_zone_name: str, position = "top"):
+
+        new_zone    = card.controller.get_zone_by_name(new_zone_name)
+        add_index   = new_zone.size if position == "bottom" else 0
+        new_zone.add_card(card, add_index)
+
+
 
     cards: Deque['Card']
     owner: Player
@@ -98,14 +117,14 @@ class Zone:
 
     def contains_card_name(self, card_name: str) -> bool:
         for card in self.cards:
-            if card.card_name == card_name or card.card_name_short == card_name:
+            if card.card_name == card_name:
                 return True
         return False
     
     def count_cards_name(self, card_name: str) -> int:
         count = 0
         for card in self.cards:
-            if card.card_name == card_name or card.card_name_short == card_name:
+            if card.card_name == card_name:
                 count += 1
         return count
 
@@ -200,6 +219,12 @@ class Deck(Zone):
 
         self.opt_incomplete = False
 
+    # After we have opted, return two lists of cards back to top and bottom of deck
+    def bottom_card(self, card: Card) -> None:
+
+        self.cards.append(card)
+
+
     def peek(self) -> Card | None:
 
         if self.is_empty:
@@ -251,9 +276,9 @@ class Hand(Zone):
 
         if isinstance(cards, list):
             for card in cards:
-                add_card_to_zone(card, "hand")
+                Zone.add_card_to_zone(card, "hand")
         else:
-            add_card_to_zone(cards, "hand")
+            Zone.add_card_to_zone(cards, "hand")
 
         # print(f"Player's hand for next turn: {self.cards}.")
 

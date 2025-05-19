@@ -1,77 +1,73 @@
 from __future__ import annotations
-from .card import CardCyle, WizardNAA, determine_arcane_damage
+from .card import CardCyle, WizardSpell, Card
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from kanomath.player import Player
 
-class AetherArc(WizardNAA):
+class AetherArc(WizardSpell):
 
-    def __init__(self, owner: Player, zone: str):
-        self.card_name = "Aether Arc"
-        self.arcane = 1
-        self.cost = 0
-        self.colour = "blue"
-        WizardNAA.__init__(self, owner, zone)
+    card_name   = "Aether Arc"
+    arcane      = 1
+    cost        = 0
+    colour      = "blue"
+        
+    def on_damage(self, damage_dealt: int):
+        self.controller.make_token("Ponder")
 
-    def on_damage(self):
+class AetherSpindle(WizardSpell, CardCyle):
+
+    card_name   = "Aether Spindle"
+    cost        = 2
+
+    def __init__(self, owner: Player, zone: str, colour: str = "red"):
+        WizardSpell.__init__(self, owner, zone, colour=colour)
+        self.arcane = Card.determine_numeric_property(4, colour)
+        self.colour = Card.format_colour_string(colour)
+
+    def on_damage(self, damage_dealt:int):
+        self.controller.opt(damage_dealt)
+
+class AetherFlare(WizardSpell, CardCyle):
+
+    card_name   = "Aether Flare"
+    cost        = 3
+
+    def __init__(self, owner: Player, zone: str, colour: str = "red"):
+        WizardSpell.__init__(self, owner, zone, colour=colour)
+        self.arcane = Card.determine_numeric_property(1, colour)
+        self.colour = Card.format_colour_string(colour)
+
+    def on_damage(self, damage_dealt:int):
+        self.controller.register_amp_next(damage_dealt, "aether flare")
+
+class AetherWildfire(WizardSpell):
+
+    card_name   = "Aether Wildfire"
+    arcane      = 4
+    cost        = 2
+    colour      = "red"
+        
+    def on_damage(self, damage_dealt: int):
+        self.controller.register_wildfire_amp(damage_dealt)
+
+class LessonInLava(WizardSpell):
+
+    card_name   = "Lesson in Lava"
+    arcane      = 3
+    cost        = 1
+    colour      = "yellow"
+        
+    def on_damage(self, damage_dealt: int):
         pass
 
-class AetherSpindle(WizardNAA, CardCyle):
 
-    card_name = "Aether Spindle"
+class SonicBoom(WizardSpell):
 
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.arcane = determine_arcane_damage(4, colour)
-        self.cost = 2
-        WizardNAA.__init__(self, owner, zone, colour=colour)
+    card_name   = "Sonic Boom"
+    arcane      = 3
+    cost        = 2
+    colour      = "yellow"
 
-    def on_damage(self):
-        pass
-
-class AetherFlare(WizardNAA, CardCyle):
-
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.card_name = "Aether Flare"
-        self.arcane = determine_arcane_damage(3, colour)
-        self.cost = 1 
-        WizardNAA.__init__(self, owner, zone, colour=colour)
-
-    def on_damage(self):
-        pass
-
-class AetherWildfire(WizardNAA):
-
-    def __init__(self, owner: Player, zone: str):
-        self.card_name = "Aether Wildfire"
-        self.arcane = 4
-        self.cost = 2
-        self.colour = "red"
-        WizardNAA.__init__(self, owner, zone)
-
-    def on_damage(self):
-        pass
-
-class LessonInLava(WizardNAA):
-
-    def __init__(self, owner: Player, zone: str):
-        self.card_name = "Lesson in Lava"
-        self.arcane = 3
-        self.cost = 1 
-        self.colour = "yellow"
-        WizardNAA.__init__(self, owner, zone)
-
-    def on_damage(self):
-        pass
-
-class SonicBoom(WizardNAA):
-
-    def __init__(self, owner: Player, zone: str):
-        self.card_name = "Sonic Boom"
-        self.arcane = 3
-        self.cost = 2
-        self.colour = "yellow"
-        WizardNAA.__init__(self, owner, zone)
-
-    def on_damage(self):
+    def on_damage(self, damage_dealt: int):
         pass

@@ -1,3 +1,6 @@
+from functools import partialmethod
+import sys
+from loguru import logger
 import kanomath.cards as card
 from kanomath.player import Player
 import pytest
@@ -6,6 +9,25 @@ from kanomath.zones import Deck
 
 
 class TestCard2:
+
+    # @classmethod
+    # def setup_class(self):
+    #     logger_format = (
+    #     # "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
+    #         "<level>{level: <8}</level> | "
+    #         "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
+    #         # "<level>{message}</level>"
+    #         "{message}"
+    #     )
+
+    #     logger.remove(0) # remove the default handler configuration
+    #     logger.add(sys.stdout, level="DEBUG", serialize=False, format=logger_format)
+
+    #     logger.level("ACTION", no=15, color="<light-cyan>", icon="A")
+    #     logger.level("EFFECT", no=15, color="<light-blue>", icon="E")
+
+    #     logger.__class__.action = partialmethod(logger.__class__.log, "action")
+    #     logger.__class__.effect = partialmethod(logger.__class__.log, "effect") 
 
     # player: Player
     

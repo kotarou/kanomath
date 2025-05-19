@@ -1,5 +1,7 @@
 from __future__ import annotations
-from .card import CardCyle, WizardNAA, determine_arcane_damage
+
+from kanomath.cards.vanilla import ScaldingRain, Zap
+from .card import Card, CardCyle, WizardNAA, WizardSpell
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -7,20 +9,13 @@ if TYPE_CHECKING:
 
 
 # The following cards are not implemented because honestly why bother
-#   glyph Overlay
+#   Glyph Overlay
 
+class SurgeNAA(WizardSpell):
 
-class SurgeNAA(WizardNAA):
+    # TODO: maybe add surge keyword
 
-    keywords = ["surge"]
-
-    def __init__(self, owner: Player, zone: str, colour: str):
-        WizardNAA.__init__(self, owner, zone, colour=colour)
-
-    def on_play(self):
-
-        WizardNAA.on_play(self)
-
+    def on_damage(self, damage_dealt: int):
         if self.test_surge():
             self.on_surge()
 
@@ -33,146 +28,112 @@ class SurgeNAA(WizardNAA):
 
 class SwellTidings(SurgeNAA):
 
-    def __init__(self, owner: Player, zone: str):
-        self.card_name = "Swell Tidings"
-        self.arcane = 5
-        self.cost = 2
-        SurgeNAA.__init__(self, owner, zone, "red")
+    card_name   = "Swell Tidings"
+    arcane      = 5
+    cost        = 2
+    colour      = "red"
 
     def on_surge(self):
-        pass
+        self.controller.make_token("Ponder")
 
 class EternalInferno(SurgeNAA):
 
-    def __init__(self, owner: Player, zone: str):
-        self.card_name = "Eternal Inferno"
-        self.arcane = 4
-        self.cost = 1
-        self.colour = "red"
-        SurgeNAA.__init__(self, owner, zone, "red")
+    card_name   = "Eternal Inferno"
+    arcane      = 4
+    cost        = 1
+    colour      = "red"
 
     def on_surge(self):
         pass
 
 class MindWarp(SurgeNAA):
 
-    def __init__(self, owner: Player, zone: str):
-        self.card_name = "Mind Warp"
-        self.arcane = 2
-        self.cost = 0
-        SurgeNAA.__init__(self, owner, zone, "yellow")
+    card_name   = "Mind Warp"
+    arcane      = 2
+    cost        = 0
+    colour      = "yellow"
 
     def on_surge(self):
         pass
 
 
-class Overflow(SurgeNAA, CardCyle):
+class Overflow(SurgeNAA, Zap):
 
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.card_name = "Overflow the Aetherwell"
-        self.arcane = determine_arcane_damage(3, colour)
-        self.cost = 0 
-        SurgeNAA.__init__(self, owner, zone, colour)
+    card_name   = "Overflow the Aetherwell"
 
     def on_surge(self):
-        pass
+        self.controller.gain_pitch(2)
 
-class Prognosticate(SurgeNAA, CardCyle):
+class Prognosticate(SurgeNAA, Zap):
 
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.card_name = "Prognosticate"
-        self.arcane = determine_arcane_damage(3, colour)
-        self.cost = 0 
-        SurgeNAA.__init__(self, owner, zone, colour)
-
+    card_name   = "Prognosticate"
+   
     def on_surge(self):
-        pass
+        self.controller.opt(1)
+
 
 class FloodGates(SurgeNAA, CardCyle):
 
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.card_name = "Open the Flood Gates"
-        self.arcane = determine_arcane_damage(3, colour)
-        self.cost = 2  
-        SurgeNAA.__init__(self, owner, zone, colour)
+    card_name   = "Open the Flood Gates"
+    cost        = 2 
+
+    def __init__(self, owner: Player, zone: str, colour: str = "blue"):
+        WizardSpell.__init__(self, owner, zone, colour=colour)
+        self.arcane = Card.determine_numeric_property(3, colour)
+        self.colour = Card.format_colour_string(colour)
 
     def on_surge(self):
-        pass
+        self.controller.draw(2)
 
-class AetherQuickening(SurgeNAA, CardCyle):
+class AetherQuickening(SurgeNAA, ScaldingRain):
 
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.card_name = "Aether Quickening"
-        self.arcane = determine_arcane_damage(4, colour)
-        self.cost = 1
-        SurgeNAA.__init__(self, owner, zone, colour)
+    card_name   = "Aether Quickening"
 
     def on_surge(self):
-        pass
+        self.controller.action_points += 1
 
-class TrailblazingAether(SurgeNAA, CardCyle):
+class TrailblazingAether(SurgeNAA, Zap):
 
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.card_name = "Trailblazing Aether"
-        self.arcane = determine_arcane_damage(4, colour)
-        self.cost = 1
-        SurgeNAA.__init__(self, owner, zone, colour)
+    card_name   = "Trailblazing Aether"
 
     def on_surge(self):
-        pass
+        self.controller.action_points += 1
 
 class DestructiveAethertide(SurgeNAA):
 
-    def __init__(self, owner: Player, zone: str):
-        self.card_name = "Destructive Aethertide"
-        self.arcane = 1
-        self.cost = 0
-        SurgeNAA.__init__(self, owner, zone, "blue")
+    card_name   = "Destructive Aethertide"
+    arcane      = 1
+    cost        = 0
+    colour      = "blue"
 
     def on_surge(self):
         pass
 
-class PerennialAetherBloom(SurgeNAA, CardCyle):
+class PerennialAetherBloom(SurgeNAA, Zap):
 
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.card_name = "Perennial AetherBloom"
-        self.arcane = determine_arcane_damage(1, colour)
-        self.cost = 0 
-        SurgeNAA.__init__(self, owner, zone, colour)
+    card_name = "Perennial AetherBloom"
+
+    def on_surge(self):
+        self.resolve_to_zone = "deck"
+
+class PopTheBubble(SurgeNAA, Zap):
+
+    card_name   = "Pop the Bubble"
 
     def on_surge(self):
         pass
 
-class PopTheBubble(SurgeNAA, CardCyle):
+class Sap(SurgeNAA, Zap):
 
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.card_name = "Pop the Bubble"
-        self.arcane = determine_arcane_damage(1, colour)
-        self.cost = 0 
-        SurgeNAA.__init__(self, owner, zone, colour)
-
-    def on_surge(self):
-        pass
-
-class Sap(SurgeNAA, CardCyle):
-
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.card_name = "Sap"
-        self.arcane = determine_arcane_damage(1, colour)
-        self.cost = 0 
-        SurgeNAA.__init__(self, owner, zone, colour)
+    card_name   = "Sap"
 
     def on_surge(self):
         pass
 
 
-class EtchingsOfArcana(SurgeNAA, CardCyle):
+class EtchingsOfArcana(SurgeNAA, Zap):
 
-    def __init__(self, owner: Player, zone: str, colour: str = "b"):
-        self.card_name = "Etchings of Arcana"
-        self.arcane = determine_arcane_damage(1, colour)
-        self.cost = 0 
-        SurgeNAA.__init__(self, owner, zone, colour)
+    card_name   = "Etchings of Arcana"
 
     def on_surge(self):
         pass
