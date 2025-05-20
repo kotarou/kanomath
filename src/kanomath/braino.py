@@ -40,10 +40,10 @@ class Braino:
         self.proactively_arsenal_gaze       = False
         self.play_pitch_risky               = True
 
-        self.rags_card_pitch            = 1
-        self.num_epots   = 0
-        self.num_dpots   = 0
-        self.num_cpots   = 0
+        self.rags_card_pitch    = 1
+        self.num_epots          = 0
+        self.num_dpots          = 0
+        self.num_cpots          = 0
 
         # Tracking variables for the turn
         self.combo_has_wf               = False
@@ -87,21 +87,21 @@ class Braino:
 
         self.combo_pitch_guaranteed = self.evaluate_combo_pitch("safe") >= self.combo_critical_resources
         self.combo_pitch_risky      = self.evaluate_combo_pitch("risky") >= self.combo_critical_resources
+        self.pitch_ready            = self.combo_pitch_risky if self.play_pitch_risky else self.combo_pitch_guaranteed
+
 
         self.combo_lesson_find_blazing = self.has_wf and self.has_lesson and not self.has_blazing
 
-        pitch_ready = self.combo_pitch_risky if self.play_pitch_risky else self.combo_pitch_guaranteed
-
-        self.combo_ready                = self.has_wf and pitch_ready and (self.combo_has_lesson or self.combo_has_blazing)
-        self.combo_ready_if_wf          = self.has_blazing and pitch_ready and not self.has_wf
-        self.combo_ready_if_lesson      = self.has_wf and pitch_ready and not (self.combo_has_lesson or self.combo_has_blazing)
-        self.combo_ready_if_blazing     = self.has_wf and pitch_ready and not (self.combo_has_lesson or self.combo_has_blazing)
-        self.combo_ready_if_pitch       = self.has_blazing and (self.has_lesson or self.has_blazing) and not pitch_ready
+        self.combo_ready                = self.has_wf and self.pitch_ready and (self.combo_has_lesson or self.combo_has_blazing)
+        self.combo_ready_if_wf          = self.has_blazing and self.pitch_ready and not self.has_wf
+        self.combo_ready_if_lesson      = self.has_wf and self.pitch_ready and not (self.combo_has_lesson or self.combo_has_blazing)
+        self.combo_ready_if_blazing     = self.has_wf and self.pitch_ready and not (self.combo_has_lesson or self.combo_has_blazing)
+        self.combo_ready_if_pitch       = self.has_blazing and (self.has_lesson or self.has_blazing) and not self.pitch_ready
 
         if self.combo_ready:
             self.state = "combo"
 
-    def evaluate_combo_pitch(self, strategy: str = "safe"):
+    def evaluate_combo_pitch(self, strategy: str = "safe", use_rags: bool = True):
 
         total_pitch = 0
         num_kindles = 0
@@ -120,323 +120,160 @@ class Braino:
         
         # Energy potions in arena
         total_pitch += 2 * self.num_epots
-
-        # Chances are, we will use rags
-        total_pitch -= self.rags_card_pitch
+        
         draw_card_pitch = 1 if strategy == "safe" else 3
 
+        if use_rags:
+            total_pitch -= self.rags_card_pitch
+            total_pitch += draw_card_pitch              # rags
+
         total_pitch += (draw_card_pitch * num_kindles)  # kindle
-        total_pitch -= self.rags_card_pitch
-        total_pitch += draw_card_pitch                  # rags
 
         return total_pitch
         
     def resolve_opt(self, opt_cards:list[Card]) -> tuple[list[Card], list[Card]]:
 
-        # print("Entering opt method")
+        # Initial variables
+        opt_data = OptData()
 
-        # The first thing to check with the opt is whether it exposes information that might change our state
-        opt_has_wf      = any(card.card_name == "Aether Wildfire" for card in opt_cards)
-        opt_has_blazing = any(card.card_name == "Blazing Aether" for card in opt_cards)
-        opt_has_lesson  = any(card.card_name == "Lesson in Lava" for card in opt_cards)
-        opt_has_potion  = any("Potion" in card.card_name for card in opt_cards)
-        opt_has_blue    = any(card.pitch == 3 for card in opt_cards)
+        for card in opt_cards:
+            if card.card_name == "Aether Wildfire":
+                opt_data.has_wf      = True
+            elif  card.card_name == "Blazing Aether":
+                opt_data.has_blazing = True
+            elif card.card_name == "Lesson in Lava":
+                opt_data.has_lesson  = True
+            elif "Potion" in card.card_name:
+                opt_data.has_potion  = True
+            elif card.card_name == "Open the Flood Gates" or card.card_name == "Overflow the Aetherwell":
+                opt_data.has_surge   = True            
+            elif card.card_name == "Tome of Aetherwind" or card.card_name == "Tome of Fyendal":
+                opt_data.has_tome    = True   
 
-        #   - Has resources to pay for combo
-        see_wf_fix_hand         = (self.has_blazing or self.has_lesson) and opt_has_wf and not self.has_wf
-        see_blazing_fix_hand    = self.has_wf and opt_has_blazing and not self.has_blazing
-        see_lesson_fix_hand     = self.has_wf and opt_has_lesson and not self.has_blazing
+            if card.pitch == 3:
+                opt_data.has_blue    = True
 
-        # Note that these count might count the player as having one too many resooucres if we need to rags a card from hand
-        hand_potential_pitch    = self.player.hand.potential_pitch + (2 * self.num_epots) + self.player.potential_chest_pitch
-        hand_threshold_pitch    = self.assess_critical_resources()
-        pitch_needed_to_combo   = hand_threshold_pitch - hand_potential_pitch
-        
-        # TODO: Need to account for held combo cards here
-        # The - 1 vaguely accounts for this in the short term, as its very unlikely we see 3 potions and can;t get them all
-        # Theres an edge case for tunic in which using tunic will gfet the second or third potion
-        reasonable_kano_activations  = (self.player.hand.potential_pitch - 1) // 3
 
-        # If we're setting up, there are two primary outcomes: either we continue to filter top of deck, or we opportunistically go for the combo if we see an integral card
+        # state changes
         if self.state == "setup":
 
-            # print(f"wf: {see_wf_fix_hand}, blazing: {see_blazing_fix_hand}, lesson: {see_lesson_fix_hand}, pots: {opt_has_potion}")
+            # We could switch to a combo here
+            if self.combo_ready_if_wf and opt_data.has_wf:
+                self.state = "topdeck_combo"
+            elif self.combo_ready_if_blazing and opt_data.has_blazing:
+                self.state = "topdeck_combo"
+            elif self.combo_ready_if_lesson and opt_data.has_lesson:
+                self.state = "topdeck_combo"
+            elif self.pitch_ready and (opt_data.has_blazing or opt_data.has_lesson) and opt_data.has_wf:
+                self.state = "topdeck_combo"
 
-            if not see_wf_fix_hand and not see_blazing_fix_hand and not see_lesson_fix_hand and opt_has_potion:
-                # print("  Entering 'opt saw potion' section")
-                # We can't use this hand to go off on a combo, given the new information
-                # So lets continue to set up
-
-                # Firstly, lets get potions to the top so we can kano them
-                pots = self.opt_top_potions(opt_cards)
-                
-                # Then lets get relevant combo pieces to the top
-                combo_pieces = self.opt_top_combo(opt_cards)
-
-                # Finally, lets put spindle at the top because we might be able to combo with it later
-                # We only want one spindle: two is too many in general (as we want to kano a potion we see from the spindle, so we don't want to kano twice into two spindleS)
-                # TODO: match only red spindles, we don't care about blues in this context (if they are run)
-                spindle = remove_first_matching(opt_cards, match_card_name("Aether Spindle"))
-
-                # TODO: If we see Will and are close to comboing, keep it on top if we're not planning to kano more in the current turn
-                # TODO: Likewise, if we see Eye, might be good to leave it on top
-
-                self.topdeck_actions = ["kano"] * len(pots)
-
-                if spindle is None:
-                    return pots + combo_pieces, opt_cards
-                else:
-                    return pots + combo_pieces + [spindle], opt_cards
-            
-            if pitch_needed_to_combo < 1 and not self.player.is_player_turn:
-                print("  Entering 'end setup, fuck it lets go' section")
-                # The conditions under which a cheeky combo could become possible
-
-                if see_wf_fix_hand or see_blazing_fix_hand or see_lesson_fix_hand:
-                    assume_kanos_used = 0
-
-                    top = []
-                    bottom = []
-
-                    if see_wf_fix_hand:
-                    # Get the wildfire to first opt
-                        wf = remove_first_matching(opt_cards, match_card_name("Aether Wildfire"))
-
-                        if wf is not None:
-                            top.append(wf)
-                            assume_kanos_used += 1
-                    
-                    print(f" 2 - top:{top}")
-
-                    if see_blazing_fix_hand or assume_kanos_used < reasonable_kano_activations:
-                        # If we need a blazing, or another one would be nice for the combo
-                        temp_blazings = remove_all_matching(opt_cards, match_card_name("Blazing Aether"))
-                                                                       
-                        # Slightly complicated here, as we might want to double blazing them if we somehow saw 2
-                        # TODO: add logic to assess combo cost, to see if we really want / need either 2 blazings (see_blazing_fix_hand), or another (if we already have one)
-                        num_blazings_to_kano = min(reasonable_kano_activations - assume_kanos_used, len(temp_blazings))
-                        blazings = temp_blazings[:num_blazings_to_kano]
-
-                        if num_blazings_to_kano < len(temp_blazings):
-                            # Remember, array slice start index is inclusive, so add +1
-                            bottom.extend(temp_blazings[num_blazings_to_kano + 1:])
-
-                        top.extend(blazings)   
-                        assume_kanos_used += len(blazings)    
-
-                        print(f" 3 - top:{top}")  
-
-
-                    if see_lesson_fix_hand or assume_kanos_used < reasonable_kano_activations:
-                        # In case we see two lessons
-                        temp_lessons = remove_all_matching(opt_cards, match_card_name("Lesson in Lava"))
-                                                                    
-                        num_lessons_to_kano = min((reasonable_kano_activations - assume_kanos_used) // 2, len(temp_lessons))
-                        lessons = temp_lessons[:num_lessons_to_kano]
-
-                        if num_lessons_to_kano < len(temp_lessons):
-                            # Remember, array slice start index is inclusive, so add +1
-                            bottom.extend(temp_lessons[num_lessons_to_kano + 1:])
-
-                        top.extend(lessons)
-                        assume_kanos_used += len(lessons)
-
-                        print(f" 4 - top:{top}")
-
-                    # After these, we can put any interesting combo cards to the top
-                    combo_pieces = self.opt_top_combo(opt_cards, self.combo_extenders)
-                    top.extend(combo_pieces)
-                    print(f" 5 - top:{top}")
-                    assume_kanos_used += len(combo_pieces)
-
-                    self.topdeck_actions = ["kano"] * len(top)
-                    
-                    # Finally we can put a single blue to the top to draw off rags
-                    blue = remove_first_matching(opt_cards, card_is_blue)
-
-                    if blue is not None:
-                        print(f" blue is {blue}")
-                        top.append(blue)
-                        self.topdeck_actions.append("draw")
-                    
-                    # There is an arguement to put xaps to the top here if the combo will be lethal with themn, to avoid over-extension
-                    # TODO: Implement this when its safe to go for the small combo to just kill
-                    bottom.extend(opt_cards)
-
-                    self.state = "topdeck_combo"
-                    return top, bottom
-
-                # Strategy here is to put the key card on top
-                # Then, work out how many kanos we can, and want to do
-                # Put any good combo pieces into those slots
-                # Then put blues into slots for rags, kindle draw, 
-                # Finally, put blues into combo slots if we can just kill them and don;t need to worry about blind reach
-
-                # top = []
-                # rest = []
-
-                # if see_wf_fix_hand:
-                #     top, rest = remove_first_matching(cards, match_card_name("Aether Wildfire"))
-
-                # if see_blazing_fix_hand:
-                #     top, rest = remove_first_matching(cards, match_card_name("Blazing Aether"))
-
-        # If we reached this state and are opting, we've hit a fairly rare case
-        # Probably a cindering foresight was played which revealed a missing combo piece, and then we pitched eye
-        # Otherwise, chances are gaze the ages was involved and is making life a little more complex
         
-        # For now, assume that any opt during a cobo is the same as during the topdeck
-        elif self.state == "topdeck_combo" or self.state == "combo":
-            print("  Entering 'we're alrerady going' section")
-            # If we're opting less than the currently known topdeck details, just pass
-            opt_leave_num = min(len(opt_cards), len(self.topdeck_actions))
+        # Perform opt
 
-            if opt_leave_num == len(opt_cards):
-                return opt_cards, []
-
-            print(f"    Pre-opt, we're expecting to ignore the first {opt_leave_num} cards of the opt")
-
-            opt_cards_top   = opt_cards[:opt_leave_num]      
-            opt_cards_bot   = opt_cards[opt_leave_num:]
-
-            # There is basically two options for topdeck cards here: we want to see hits, or we want to see blues to draw
-            # Draw case is easy, and we address it forst because probably this deep into a turn, we need the extender blues
-            # TODO: investigate case where we're in top_deck combo, opting, and see a blazing that is better than drawing
-
-            # We draw 1 off rags, and one per kindle
-            opt_draws_already_allocated = self.topdeck_actions.count("draw")
-            combo_draws_cards = 0 if self.player.rags_activated else 1
-            combo_draws_cards += self.count_kindles
-            combo_draws_including_opt = combo_draws_cards
-
-            print(f"    Pre-opt, we're expecting to draw {combo_draws_cards} cards this combo")
-
-            for i in range(len(opt_cards_top)):
-                card = opt_cards_top[i]
-                # Little sanity check
-                action = self.topdeck_actions[i] if i < len(self.topdeck_actions) else "blind"
-
-                # We for whatever reason might be drawing a card that otherwise could be kano'd as a combo extender
-                # For ease of implementation, lets assume that decision was correct
-                # TODO: Could investgate this assumption as a sanity check
-                if card.card_name in self.combo_draw_2 and action != "draw":
-                    combo_draws_including_opt += 2
-                elif card.card_name in self.combo_draw_1 and action != "draw":
-                    combo_draws_including_opt += 1
-
-                # A kindle we'll draw will mean we draw another card this turn
-                # A kindle  we're not drawing needs to be in the other awway
-                if card.card_name == "Kindle":
-                    combo_draws_including_opt += 1
-            
-            print(f"    Considering opt, we're now expecting to draw {combo_draws_including_opt} cards this combo")
-
-            kindles = remove_all_matching(opt_cards_bot, match_card_name("Kindle"))
-
-            if combo_draws_cards > 0:
-                print(f"      As we are drawing cards, putting{len(kindles)} to top of opt")
-                for kindle in kindles:
-                    opt_cards_top.append(kindle)
-                    self.topdeck_actions.append("draw")
-
-            print(f"    Post kindles, top: {opt_cards_top}, bot: {opt_cards_bot}")
-
-
-            # if combo_draws_including_opt <= opt_draws_already_allocated and len(opt_cards_bot) > 0:
-                
-            # Lets put combo extenders to top
-            # TODO: consider player pitch availble (urgh) to see if floodgates is actually appropriate
-            extenders = self.opt_top_combo_extenders(opt_cards_bot)
-
-            for card in extenders:
-                opt_cards_top.append(card)
-                self.topdeck_actions.append("kano")
-
-            print(f"    Post extenders, top: {opt_cards_top}, bot: {opt_cards_bot}")
-
-
-            # As well as super important kano pieces
-            blazings = remove_all_matching(opt_cards_bot, match_card_name("Blazing Aether"))
-
-            for card in blazings:
-                opt_cards_top.append(card)
-                self.topdeck_actions.append("kano")
-
-            print(f"    Post blazings, top: {opt_cards_top}, bot: {opt_cards_bot}")
-
-
-            # Allocate blues for those draws
-            # TODO: proactively try to draw kindle into another blue
-            if combo_draws_including_opt > opt_draws_already_allocated:
-                draws_unaccounted = combo_draws_cards - opt_draws_already_allocated
-                # TODO: implement logic for when gaze the ages is better to kano, then draw
-                # Chances are thats rare if we're this deep into the method though, we're opting lots to get here
-                blues = remove_all_matching(opt_cards_bot, card_is_blue)
-                print(f"    With blues removed, top: {opt_cards_top}, bot: {opt_cards_bot}, blues: {blues}")
-                
-                for i in range(draws_unaccounted):
-                    if i < len(blues):
-                        opt_cards_top.append(blues[i])
-                        self.topdeck_actions.append("draw")
-                        opt_draws_already_allocated += 1
-
-            print(f"    Post draw allocations, top: {opt_cards_top}, bot: {opt_cards_bot}")
-
-            return opt_cards_top, opt_cards_bot
+        if self.state == "setup":
+            return self.resolve_opt_setup(opt_cards, opt_data)
         
+        elif self.state == "topdeck_combo":
+            return self.resolve_opt_topdeck(opt_cards, opt_data)
         
-        # elif self.state == "combo_topdeck":
+        elif self.state == "combo":
+            return self.resolve_opt_combo(opt_cards, opt_data)
 
-        return opt_cards, []
+        else:
+            raise Exception("Opting in invalid state")
 
-    def opt_top_potions(self, opt_cards:list[Card]) -> list[Card]:                
-        # Potion priorities are normally simple, epot > dpot > cpot
-        # There are edge cases: dpot #1 is maybe better than epot #3, and cpot #1 is better than dpot#2 
-        #   Although access to will of arcana or eye complicates that further
-        # TODO: actually accommodate for these cases
-        # TODO: code specific edge case where spinning will makes double dpot better
-        pots = remove_all_matching(opt_cards, match_card_name(POTIONS))
-        
-        # Very simpoe sort order that puts epots at the top
-        pot_order = ["Energy Potion", "Potion of Deja Vu", "Clarity Potion"]
-        pots.sort(key= lambda x: pot_order.index(x.card_name))
 
-        return pots
+    def resolve_opt_setup(self, opt_cards:list[Card], opt_data: OptData) -> tuple[list[Card], list[Card]]:
+
+        top = list[Card]()
+
+        pot_priority    = {
+            "Energy Potion":        10,
+            "Potion of Deja Vu":    8 if self.num_dpots == 0 else 4,
+            "Clarity Potion":       6 if self.num_cpots == 0 else 2
+        }
+        pots            = remove_all_matching(opt_cards, match_card_name(list(pot_priority.keys())))
+
+        pots.sort(key= lambda x: pot_priority[x.card_name], reverse = True)
+        top.extend(pots)
+
+        # We don't want to keep flood gates / overflow while not comboing
+        combo_priority  = {
+            "Lesson in Lava":           11 if (not self.has_wf and opt_data.has_wf) else (8 if not (self.has_blazing or self.has_lesson) else 6),
+            "Aether Wildfire":          10 if not self.has_wf else 1,
+            "Blazing Aether":           9 if not (self.has_blazing or self.has_lesson) else 7,
+            "Kindle":                   8,
+            "Tome of Aetherwind":       4,
+            "Tome of Fyendal":          4,
+            "Gaze the Ages":            4,
+            "Aether Spindle":           3,
+        }
+        #"Open the Flood Gates", "Overflow the Aetherwell", "Sonic Boom", "Aether Flare"
+        combo_pieces    = remove_all_matching(opt_cards, match_card_name(list(combo_priority.keys())))
+        combo_pieces.sort(key= lambda x: combo_priority[x.card_name], reverse = True)
+
+        top.extend(combo_pieces)
+        # TODO: topdeck actions
+
+        return top, opt_cards
+
     
-    def opt_top_combo(self, opt_cards:list[Card], target_cards:list[str] = []) -> list[Card]: 
+    def resolve_opt_combo(self, opt_cards:list[Card], opt_data: OptData) -> tuple[list[Card], list[Card]]:
             
-        # We get passed a list of cards we want for the combo
-        if not len(target_cards):
-            target_cards = self.combo_core_pieces.copy()
+        top = list[Card]()
 
-            # Some of these cards might be useful in duplicate during a combo turn
-            # For now, assume we don't want to practively work towards having two of them in a combo
-            # TODO: Identify when I might want this, and then implement relevant logic
-            if self.has_wf:
-                target_cards.remove("Aether Wildfire")
-            if self.has_lesson:
-                target_cards.remove("Lesson in Lava")
-            if self.has_blazing:
-                target_cards.remove("Blazing Aether")
-        
-        top =  remove_all_matching(opt_cards, match_card_name(target_cards))
+        # TODO: these need to be far more precise, especially regarding pitch access
+        # However, for now they'll suffice
+        combo_priority  = {
+            "Lesson in Lava":           11 if (not self.has_wf and opt_data.has_wf) else (8 if not (self.has_blazing or self.has_lesson) else 6),
+            "Aether Wildfire":          10 if not self.has_wf else 1,
+            "Blazing Aether":           9 if not (self.has_blazing or self.has_lesson) else 7,
+            "Kindle":                   8,
+            "Open the Flood Gates":     8,
+            "Overflow the Aetherwell":  6,
+            "Sonic Boom":               5,
+            "Tome of Aetherwind":       4,
+            "Tome of Fyendal":          4,
+            "Gaze the Ages":            4,
+            "Aether Flare":             2
+        }
 
-        return top
+        combo_pieces    = remove_all_matching(opt_cards, match_card_name(list(combo_priority.keys())))
+        combo_pieces.sort(key= lambda x: combo_priority[x.card_name], reverse = True)
 
-    def opt_top_combo_extenders(self, opt_cards:list[Card], target_cards:list[str] = []) -> list[Card]: 
+        top.extend(combo_pieces)
+        # TODO: topdeck actions
+
+        return top, opt_cards
+
+    def resolve_opt_topdeck(self, opt_cards:list[Card], opt_data: OptData) -> tuple[list[Card], list[Card]]:
             
-        # We get passed a list of cards we want for the combo
-        if not len(target_cards):
-            target_cards = self.combo_extenders.copy()
+        top = list[Card]()
 
-        top = remove_all_matching(opt_cards, match_card_name(target_cards))
+        # TODO: these need to be far more precise, especially regarding pitch access. Needs blues underneath.
+        # However, for now they'll suffice
+        combo_priority  = {
+            "Lesson in Lava":           11 if (not self.has_wf and opt_data.has_wf) else (8 if not (self.has_blazing or self.has_lesson) else 6),
+            "Aether Wildfire":          10 if not self.has_wf else 1,
+            "Blazing Aether":           9 if not (self.has_blazing or self.has_lesson) else 7,
+            "Kindle":                   8,
+            "Open the Flood Gates":     8,
+            "Overflow the Aetherwell":  6,
+            "Sonic Boom":               5,
+            "Tome of Aetherwind":       4,
+            "Tome of Fyendal":          4,
+            "Gaze the Ages":            4,
+            "Aether Flare":             0
+        }
 
-        # Very simple sort ordering
-        # TODO: Actually care about pitch here (complex af)
-        extender_priority = ["Open the Flood Gates", "Overflow the Aetherwell"]
-        top.sort(key= lambda x: extender_priority.index(x.card_name) if x in extender_priority else 0)
-        
-        return top
+        combo_pieces    = remove_all_matching(opt_cards, match_card_name(list(combo_priority.keys())))
+        combo_pieces.sort(key= lambda x: combo_priority[x.card_name], reverse = True)
+
+        top.extend(combo_pieces)
+        # TODO: topdeck actions
+
+        return top, opt_cards
+
     
     def cycle_make_initial_decisions(self):
 
@@ -687,3 +524,14 @@ class Braino:
         # TODO: Consider playing cindering at action speed
              
         return 0
+
+class OptData:
+
+    def __init__(self):
+        self.has_wf      = False
+        self.has_blazing = False
+        self.has_lesson  = False
+        self.has_potion  = False
+        self.has_surge   = False
+        self.has_tome    = False
+        self.has_blue    = False
