@@ -208,6 +208,14 @@ class Braino:
             "Gaze the Ages":            4,
             "Aether Spindle":           3,
         }
+
+        # If we are playing NAA in our turn, gaze the ages is a good card to top
+        action_card = self.player.get_card_by_intent("play")
+        if self.player.wizard_naa_played > 0 or (action_card is not None and action_card.card_class == "wizard"):
+            combo_priority["Gaze the ages"] = 4
+
+
+
         #"Open the Flood Gates", "Overflow the Aetherwell", "Sonic Boom", "Aether Flare"
         combo_pieces    = remove_all_matching(opt_cards, match_card_name(list(combo_priority.keys())))
         combo_pieces.sort(key= lambda x: combo_priority[x.card_name], reverse = True)
