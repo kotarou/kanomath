@@ -26,11 +26,11 @@ Correct line:
 
 ----
 
-INFO     | kanomath.player:492 | Player hand: [4 cards: Aether Wildfire [arsenal], Destructive Aethertide [pitch], Overflow the Aetherwell [pitch], Overflow the Aetherwell [pitch]], arsenal: [size 0, cards: none], arena: [size 0, cards: none].
-action   | kanomath.player:243 | Player activated kano, seeing Prognosticate. Banishing it to thin deck.
-action   | kanomath.player:247 | Player activated kano, seeing Gaze the Ages. Banishing it to play as an instant.
-action   | kanomath.player:262 | Playing Gaze the Ages from banish as an instant.
-decision | kanomath.player:211 | Opt saw 2 cards. Put [] to top and [Sap, Pop the Bubble] to bottom.
+INFO     | kanomath.player:492 | Player hand: [4 cards: Aether Wildfire [arsenal], Destructive Aethertide [pitch], Overflow the Aetherwell [pitch], Overflow the Aetherwell [pitch]], arsenal: [size 0, cards: none], arena: [size 0, cards: none].  
+action   | kanomath.player:243 | Player activated kano, seeing Prognosticate. Banishing it to thin deck.  
+action   | kanomath.player:247 | Player activated kano, seeing Gaze the Ages. Banishing it to play as an instant.  
+action   | kanomath.player:262 | Playing Gaze the Ages from banish as an instant.  
+decision | kanomath.player:211 | Opt saw 2 cards. Put [] to top and [Sap, Pop the Bubble] to bottom.  
 
 Incorrect line taken: 
 - banish Prognosticate to thin, 
@@ -44,3 +44,20 @@ Correct line
 - play Gaze the Ages
 
 ----
+
+INFO     | kanomath.player:492 | Player hand: [4 cards: Overflow the Aetherwell [pitch], Aether Spindle [play], Aether Arc [pitch], Arcane Twining [pitch]], arsenal: [size 0, cards: none], arena: [size 0, cards: none].  
+action   | kanomath.player:262 | Playing Aether Spindle [play] from hand as an action.  
+action   | kanomath.player:243 | Player activated kano, seeing Blazing Aether. Banishing it to thin deck.  
+action   | kanomath.player:243 | Player activated kano, seeing Pop the Bubble. Banishing it to thin deck.  
+
+Incorrect line taken: 
+- Play spindle
+- banish Blazing Aether to thin, 
+- banish Pop the Bubble to thin, 
+- play Gaze the Ages
+
+Correct line
+- Play spindle
+- check number of blazings in the deck, then choose to banish banish Blazing Aether or not to play
+- kano if banishing blazing, banish Pop the bubble,
+- play pop then blazing
