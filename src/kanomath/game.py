@@ -16,7 +16,7 @@ class Game:
 
     @property
     def game_should_continue(self) -> bool:
-        return self.player.braino.state != "combo" and self.player_num_turns < 10 and self.player.deck.size > 1
+        return self.player_num_turns < 2 and self.player.deck.size > 1
 
     def __init__(self):
         pass
@@ -26,9 +26,9 @@ class Game:
         self.opponent = Opponent()
 
         self.player.deck.seed_with_cards([
-            card.AetherFlare(self.player, "test", "red"),
-            card.AetherFlare(self.player, "test", "red"),
-            card.AetherFlare(self.player, "test", "red"),
+            # card.AetherFlare(self.player, "test", "red"),
+            # card.AetherFlare(self.player, "test", "red"),
+            # card.AetherFlare(self.player, "test", "red"),
 
             card.AetherSpindle(self.player, "test", "red"),
             card.AetherSpindle(self.player, "test", "red"),

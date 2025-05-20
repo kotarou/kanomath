@@ -393,12 +393,14 @@ class Braino:
         option_unassinged = list(filter(lambda x: x.intent not in ["arsenal", "play", "hold"], option_unassinged))
 
         for card in option_unassinged:
+            if card.intent != "":
+                raise Exception(f"{card} should not have intent, as it is unassigned")
             card.intent = "pitch"
 
-        pitch_available = sum(x.pitch for x in option_unassinged) - pitch_to_hold
+        pitch_available = sum((x.pitch if not x.intent == "play" else 0) for x in option_unassinged) - pitch_to_hold
 
         self.kanos_dig_opponent_turn = pitch_available // 3 if pitch_available > 0 else 0
-        logger.decision(f"Planning to kano {self.kanos_dig_opponent_turn} times with the {pitch_available} availble (other method: {self.evaluate_combo_pitch('safe')})")
+        logger.decision(f"Planning to kano {self.kanos_dig_opponent_turn} times with the {pitch_available} available (other method: {self.evaluate_combo_pitch('safe')})")
 
     # Decide what action should be taken with a topdeck card
     def decide_kano_result(self, card: Card):

@@ -21,7 +21,7 @@ class Zone:
     @staticmethod
     def move_card_to_zone(card: Card, new_zone_name: str, position = "top"):
         
-        logger.debug(f"moving {card} from {card.zone} to {new_zone_name}")
+        # logger.debug(f"moving {card} from {card.zone} to {new_zone_name}")
 
         old_zone = card.controller.get_zone_by_name(card.zone)
         old_zone.remove_card(card)
@@ -275,11 +275,11 @@ class Hand(Zone):
 
     def __repr__(self):
         str_cards = "none" if self.size == 0 else ', '.join(str(x) for x in self.cards)
-        return f"[zone.hand: size {self.size}, cards: {str_cards}]"
+        return f"[zone.hand: {self.size} cards: {str_cards}]"
 
     def __str__(self):
         str_cards = "none" if self.size == 0 else ', '.join(str(x) for x in self.cards)
-        return f"[size {self.size}, cards: {str_cards}]"
+        return f"[{self.size} cards: {str_cards}]"
 
     @property
     def potential_pitch(self) -> int:

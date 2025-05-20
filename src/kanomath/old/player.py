@@ -380,7 +380,7 @@ class Player:
         if(self.usesTunic and self.tunicCounters < 3):
             self.tunicCounters += 1
 
-        kprint(f"Beginning turn {self.turn}. {len(self.hand)} cards in hand, {self.deck.cardsLeft}/{self.deck.deckSize} cards remaining in deck, {len(self.banish)} cards banished.")
+        # kprint(f"Beginning turn {self.turn}. {len(self.hand)} cards in hand, {self.deck.cardsLeft}/{self.deck.deckSize} cards remaining in deck, {len(self.banish)} cards banished.")
 
         # We'll split cards into these buckets
         cardsToPlay     = []

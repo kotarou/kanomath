@@ -289,7 +289,7 @@ class Player:
         if self.arsenal.size > 0:
             raise Exception(f"Attempting to arsenal {card} when {self.arsenal.get_card()} is already in the arsenal).")
 
-        print(f"  Arsenalling {card}.")
+        # print(f"  Arsenalling {card}.")
         zone.Zone.move_card_to_zone(card, "arsenal")
 
     def pitch_card(self, card: Card):
@@ -395,7 +395,7 @@ class Player:
         elif len (potential_arsenal_cards) == 1:
             self.arsenal_card(potential_arsenal_cards[0])
             
-        logger.info(f"Player drew {self.current_intellect - self.hand.size} cards for end of their turn.")
+        # logger.info(f"Player drew {self.current_intellect - self.hand.size} cards for end of their turn.")
         
         self.end_turn()
 
@@ -417,9 +417,9 @@ class Player:
         
         if self.is_player_turn:
             self.action_points  = 1
-            logger.system(f"Beginning player{'\'s first' if game_first_turn else ''} turn")
-        else:
-            logger.system(f"Beginning opponent{'\'s first' if game_first_turn else ''} turn")
+        #     logger.system(f"Beginning player{'\'s first' if game_first_turn else ''} turn")
+        # else:
+        #     logger.system(f"Beginning opponent{'\'s first' if game_first_turn else ''} turn")
 
         self.crucible_used      = False
         self.wizard_naa_played  = 0
@@ -427,10 +427,10 @@ class Player:
     
         self.braino.evaluate_state()
 
-        logger.info(f"Player hand: {self.hand}, arsenal: {self.arsenal}, arena: {self.arena}.")
-
         if game_first_turn or not self.is_player_turn:
             self.braino.cycle_make_initial_decisions()
+
+        logger.info(f"Player hand: {self.hand}, arsenal: {self.arsenal}, arena: {self.arena}.")
 
     def end_turn(self):
 
