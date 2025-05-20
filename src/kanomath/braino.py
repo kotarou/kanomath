@@ -65,7 +65,7 @@ class Braino:
 
     def evaluate_state(self):
 
-        # What card form hand is going to be used for rags?
+        # What card from hand is going to be used for rags?
         # We assume a card is always rags'd from hand for the relevant methods here, because we're just estimating pitch
         if self.combo_lesson_find_blazing and self.player.combo_card_location("Lesson in Lava") == "hand":
             self.rags_card_pitch = 2
@@ -413,7 +413,7 @@ class Braino:
         # self.kanos_dig_opponent_turn = pitch_available // 3 if pitch_available > 0 else 0
         # logger.decision(f"Planning to kano {self.kanos_dig_opponent_turn} times with the {pitch_available} available (other method: {self.evaluate_combo_pitch('safe')})")
 
-    def decide_kanos_opp_turn(self) -> int:
+    def decide_pitch_opp_turn(self) -> int:
 
         free_pitch      = 0
         pitch_next_turn = 0
@@ -436,7 +436,8 @@ class Braino:
             if play_card.card_name == "Lesson in Lava" :
                 pitch_next_turn += 1
 
-        return (free_pitch - pitch_next_turn) // 3
+        # return max((free_pitch - pitch_next_turn) // 3, 0)
+        return max(free_pitch - pitch_next_turn, 0)
 
         
 
@@ -451,12 +452,13 @@ class Braino:
             return "brick"
 
         card_is_potion  = card.card_name in POTIONS
+        card_is_setup   = card.card_name in ["Gaze the Ages", "Aether Spindle"]
         card_is_combo   = card.card_name in COMBO_CORE
         card_is_extender= card.card_name in COMBO_EXTENDERS
         
         if self.state == "setup":
 
-            if card_is_potion:
+            if card_is_potion or card_is_setup:
                 return "play"
             
             if (card_is_combo or card_is_extender) and self.has_wf and not self.player.is_player_turn:
