@@ -393,14 +393,46 @@ class Braino:
         option_unassinged = list(filter(lambda x: x.intent not in ["arsenal", "play", "hold"], option_unassinged))
 
         for card in option_unassinged:
-            if card.intent != "":
+            if card.intent != "" and card.intent != "pitch":
                 raise Exception(f"{card} should not have intent, as it is unassigned")
+            if card.zone == "arsenal":
+                raise Exception(f"Cannot pitch {card} from arsenal!")
+            
             card.intent = "pitch"
 
-        pitch_available = sum((x.pitch if not x.intent == "play" else 0) for x in option_unassinged) - pitch_to_hold
+        # pitch_available = sum((x.pitch if not x.intent == "play" else 0) for x in option_unassinged) - pitch_to_hold
 
-        self.kanos_dig_opponent_turn = pitch_available // 3 if pitch_available > 0 else 0
-        logger.decision(f"Planning to kano {self.kanos_dig_opponent_turn} times with the {pitch_available} available (other method: {self.evaluate_combo_pitch('safe')})")
+        # self.kanos_dig_opponent_turn = pitch_available // 3 if pitch_available > 0 else 0
+        # logger.decision(f"Planning to kano {self.kanos_dig_opponent_turn} times with the {pitch_available} available (other method: {self.evaluate_combo_pitch('safe')})")
+
+    def decide_kanos_opp_turn(self) -> int:
+
+        free_pitch      = 0
+        pitch_next_turn = 0
+        play_card       = self.player.get_card_by_intent("play")
+
+        for card in self.player.hand:
+            if card.intent == "pitch":
+                free_pitch += card.pitch
+
+        if play_card is not None:
+            pitch_next_turn += play_card.cost
+
+            # Save three more pitch for a kano afterward
+            # Reasonably no player will ever play either without a crucible pump
+            if play_card.card_name == "Aether Spindle" or play_card.card_name == "Aether Spindle":
+                pitch_next_turn += 4
+        
+            # We always want the crucible pump
+            # Just in case a SV1 deck wants to fuck with us I guess?
+            if play_card.card_name == "Lesson in Lava" :
+                pitch_next_turn += 1
+
+        return (free_pitch - pitch_next_turn) // 3
+
+        
+
+
 
     # Decide what action should be taken with a topdeck card
     def decide_kano_result(self, card: Card):
@@ -500,13 +532,11 @@ class Braino:
                 return 3
             else:
                 return 8
-    
-        # High priority if to find a wildfire if we lack one
-        # TODO: if we resolve this in this fashion, should resolve kanos then play action
-        if card.card_name == "Lesson in Lava" and not self.has_wf:
-            return 7
-            
+
         if card.card_name == "Aether Spindle" and card.colour == "red":
+            if card.zone == "arsenal":
+                return 7
+            
             # if self.player.pitch_floating >= 6:
             return 2
             # elif self.player.pitch_floating >= 3:
@@ -515,6 +545,13 @@ class Braino:
             #     return 3
             # else:
             #     return 0
+
+        # High priority if to find a wildfire if we lack one
+        # TODO: if we resolve this in this fashion, should resolve kanos then play action
+        if card.card_name == "Lesson in Lava" and not self.has_wf:
+            return 6
+            
+
         
         if card.card_name == "Aether Flare" and card.colour == "red":
             # if self.player.pitch_floating >= 5:

@@ -306,13 +306,15 @@ class Player:
         # TODO: special handling of first turn opts & etc
         self.prepare_turn()
 
-        num_kanos_aim       = self.braino.kanos_dig_opponent_turn
+        num_kanos_aim       = self.braino.decide_kanos_opp_turn()
+        logger.decision(f"Aiming to kano {num_kanos_aim} times in opponent's turn.")
+
+
         num_kanos_completed = 0
 
         pitch_cards = self.get_cards_by_intent("pitch")
         pitch_cards.sort(key = lambda x : x.pitch, reverse=True)
        
-        # print(f"  Aiming to kano {num_kanos_aim} times in opponent's turn.")
 
         while(num_kanos_completed < num_kanos_aim):
             

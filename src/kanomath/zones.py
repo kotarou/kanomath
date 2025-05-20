@@ -71,6 +71,12 @@ class Zone:
         if not hasattr(self, "cards"):
             self.cards = deque()  
     
+    def __iter__(self):
+        return self.cards.__iter__()
+
+    # def __next__(self):
+    #     return self.cards.__next__()
+
     @property 
     def size(self):
         return len(self.cards)
