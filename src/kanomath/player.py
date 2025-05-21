@@ -39,6 +39,7 @@ class Player:
     _amp_wildfire = 0
     _amp_next = 0
     _amp = 0
+    _arcane_dealt = 0
 
     # Equipment status
     rags_activated = False
@@ -188,6 +189,13 @@ class Player:
             raise Exception(f"Cannot amp less than 0 ({amp_num}).")
         
         self._amp += 1
+
+    def register_arcane_damage(self, amp_num: int, source: str):
+        
+        if(amp_num < 1):
+            return
+        
+        self._arcane_dealt += amp_num
 
     def gain_pitch(self, num_resources: int):
         
@@ -488,6 +496,7 @@ class Player:
 
         self.crucible_used      = False
         self.wizard_naa_played  = 0
+        self._arcane_dealt      = 0
 
     
         self.braino.evaluate_state()

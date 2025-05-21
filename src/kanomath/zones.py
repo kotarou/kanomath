@@ -133,6 +133,14 @@ class Zone:
         except ValueError as ve:
             return False
 
+    def get_first_card_by_name(self, card_name: str) -> Card:
+        
+        for card in self.cards:
+            if card.card_name == card_name:
+                return card
+            
+        raise Exception(f"Finding invalid card {card_name} in zone {self.zone_name}")
+
     def contains_card_name(self, card_name: str) -> bool:
         for card in self.cards:
             if card.card_name == card_name:

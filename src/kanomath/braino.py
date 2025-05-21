@@ -439,10 +439,6 @@ class Braino:
         # return max((free_pitch - pitch_next_turn) // 3, 0)
         return max(free_pitch - pitch_next_turn, 0)
 
-        
-
-
-
     # Decide what action should be taken with a topdeck card
     def decide_kano_result(self, card: Card):
 
@@ -576,6 +572,30 @@ class Braino:
         # TODO: Consider playing cindering at action speed
              
         return 0
+
+
+    def decide_lesson_target(self, arcane_dealt: int):
+
+        if arcane_dealt < 1:
+            raise Exception("Lesson cannot search for a card when not dealing damage.")
+
+        if self.state == "setup":
+
+            if not self.has_wf and arcane_dealt >= 2 and self.player.deck.count_cards_name("Aether Wildfire"):
+                return "Aether Wildfire"
+            
+            if self.player.deck.count_cards_name("Blazing Aether") > 1 and self.player._arcane_dealt > 3 and self.player.pitch_floating >= 3:
+                return "Blazing Aether"
+
+            if self.player.pitch_floating >= 3 and self.player.deck.count_cards_name("Gaze the Ages"):
+                return "Gaze the Ages"
+
+            if self.has_wf and self.player.deck.count_cards_name("Kindle"):
+                return "Kindle"
+
+        else:
+            pass
+
 
 class OptData:
 

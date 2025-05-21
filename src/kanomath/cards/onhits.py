@@ -1,4 +1,7 @@
 from __future__ import annotations
+import typing
+
+from loguru import logger
 from .card import CardCyle, WizardSpell, Card
 
 from typing import TYPE_CHECKING
@@ -59,6 +62,14 @@ class LessonInLava(WizardSpell):
     colour      = "yellow"
         
     def on_damage(self, damage_dealt: int):
+        card_name = typing.cast(str, self.controller.braino.decide_lesson_target(damage_dealt))        
+        card = self.controller.deck.get_first_card_by_name(card_name)
+
+        self.controller.deck.remove_card(card)
+        self.controller.deck.add_card(card, 0)
+
+        logger.action(f"Lesson in Lava found {card_name} and put it to top of deck.")
+
         pass
 
 
