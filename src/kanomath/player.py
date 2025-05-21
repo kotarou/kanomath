@@ -110,7 +110,7 @@ class Player:
             if self.arsenal.get_card().intent == intent: # type: ignore
                 return self.arsenal.get_card() # type: ignore
         
-        for card in self.hand.cards:
+        for card in self.hand:
             if card.intent == intent:
                 return card
     
@@ -124,7 +124,7 @@ class Player:
             if self.arsenal.get_card().intent == intent: # type: ignore
                 output.append(self.arsenal.get_card()) # type: ignore
         
-        for card in self.hand.cards:
+        for card in self.hand:
             if card.intent == intent:
                 output.append(card)
     

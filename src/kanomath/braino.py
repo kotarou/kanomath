@@ -71,7 +71,7 @@ class Braino:
             self.rags_card_pitch = 2
         else:
             if self.player.hand.size:
-                self.rags_card_pitch = min(card.pitch for card in self.player.hand.cards)
+                self.rags_card_pitch = min(card.pitch for card in self.player.hand)
             else:
                 self.rags_card_pitch = 0
         
@@ -106,7 +106,7 @@ class Braino:
         total_pitch = 0
         num_kindles = 0
 
-        for card in self.player.hand.cards:
+        for card in self.player.hand:
 
             if card.card_type == "Kindle":
                 num_kindles += 1
