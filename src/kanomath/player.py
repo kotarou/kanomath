@@ -232,6 +232,12 @@ class Player:
             # But contonueing to kano into bricks allows for more hand cycling
             return
         
+        if action == "wait":
+            logger.action(f"Player activated kano, seeing {card} and waiting to draw it next turn.")
+            # We could set num_kanos to 0 here to stop kanoing
+            # But contonueing to kano into bricks allows for more hand cycling
+            return
+
         elif action == "assess_combo":
             logger.action(f"Player activated kano, seeing {card}. Switching to assess a cheeky combo kill.")
             # We might be able to go off with this card
@@ -276,15 +282,19 @@ class Player:
             self.spend_pitch(card.cost, card.card_name)
             card.on_play()
 
-        
+            if card.card_class == "wizard" and card.card_type == "action":
+                self.wizard_naa_played += 1
+
+            if card.deals_arcane and card.arcane_dealt:
+                card.on_damage(card.arcane_dealt)
 
 
         else:
             # TODO: pitch to play the
-            raise Exception(f"Cannot afford {card}, cost ({card.cost}), with {self.pitch_floating} resources floating.")
+            logger.warning(f"Cannot afford {card}, cost ({card.cost}), with {self.pitch_floating} resources floating.")
+            # raise Exception(f"Cannot afford {card}, cost ({card.cost}), with {self.pitch_floating} resources floating.")
 
-        if card.card_class == "wizard" and card.card_type == "action":
-            self.wizard_naa_played += 1
+
 
     def pitch_best_cards(self, target_pitch: int):
 
@@ -296,13 +306,14 @@ class Player:
         min_idx = 0
         pitch_cards = list[Card]()
         solution = False
+        attempt_optimal = True
         
         while not solution:
             
             pitch_cards.clear()
             pitch_candidates = self.get_cards_by_intent("pitch")
             pitch_candidates.sort(key = lambda x : x.pitch) # smallest first
-            pitch   = 0
+            pitch   = self.pitch_floating
             
             for idx in range(min_idx, len(pitch_candidates)):
                 card = pitch_candidates[idx]
@@ -310,26 +321,31 @@ class Player:
                 pitch += card.pitch
                 pitch_cards.append(card)
 
-                if pitch == target_pitch:
+                if pitch == target_pitch or (not attempt_optimal and pitch > target_pitch):
                     solution = True
                     break
-                elif pitch > target_pitch:
+                elif pitch > target_pitch and attempt_optimal:
                     min_idx += 1
                     break
                 else:
                     continue
             
-            if min_idx == len(pitch_candidates):
-                break
+            if min_idx >= len(pitch_candidates) - 1:
+                # There is no optimal pitch solution
+                if attempt_optimal:
+                    attempt_optimal = False
+                    min_idx = 0
+                else:
+                    break
 
-            
         pitch_total = sum(x.pitch for x in pitch_cards)
 
         if pitch_total < target_pitch:
-            raise Exception(f"Pitching {pitch_cards} was insufficient ({pitch_total} / {target_pitch})")
-        
-        for card in pitch_cards:
-            self.pitch_card(card)
+            logger.warning(f"Pitching {pitch_cards} was insufficient ({pitch_total} / {target_pitch}).")
+            # raise Exception(f"Pitching {pitch_cards} was insufficient ({pitch_total} / {target_pitch}). Hand is {self.hand}")
+        else:
+            for card in pitch_cards:
+                self.pitch_card(card)
 
     def arsenal_card(self, card: Card):
 
@@ -362,26 +378,16 @@ class Player:
 
         logger.decision(f"Aiming to kano up to {num_kanos_aim} times in opponent's turn using {opp_turn_pitch} pitch.")
 
-        should_continue = True
+        should_continue = num_kanos_aim > 0
 
 
         while(should_continue):
             
-            # print(f"Kanos completed: {num_kanos_completed}. To complete: {num_kanos_aim - num_kanos_completed}. Loop condition {num_kanos_completed < num_kanos_aim} ")
-
-            # while(self.pitch_floating < 3):
-            #     if len(pitch_cards):
-            #         # Ideally pitch efficiently, so take from the beginning of the pitch array
-            #         card = pitch_cards.pop(0)
-            #         self.pitch_card(card)
-            #     else:
-            #         # Aimed to kano more times than we have
-            #         # Chances are we spent the resources on a kano'd card, or have since decided to hold a card
-            #         logger.warning(f"Ran out of resources to kano with in opponents turn. Kanos completed: ({num_kanos_completed}/{num_kanos_aim}), {self.pitch_floating} pitch left.")
-            #         should_continue = False
-            #         break
-            #         # raise Exception(f"Somehow, trying to get more pitch when out of pitch cards. ")
             self.pitch_best_cards(3)
+
+            # If we can't afford to kano any more (chanes are we played a spindle in their turn), then stop
+            if self.pitch_floating < 3:
+                break
             
             # TODO: assess maybe comboing based on the kano result
             self.kano()

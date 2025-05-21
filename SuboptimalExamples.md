@@ -61,3 +61,17 @@ Correct line
 - check number of blazings in the deck, then choose to banish banish Blazing Aether or not to play
 - kano if banishing blazing, banish Pop the bubble,
 - play pop then blazing
+
+----
+
+INFO     | kanomath.player:498 | Player hand: [4 cards: Kindle [arsenal], Prognosticate [pitch], Prognosticate [pitch], Arcane Twining [pitch]], arsenal: [size 0, cards: none], arena: [size 0, cards: none].  
+action   | kanomath.player:253 | Player activated kano, seeing Aether Spindle. Banishing it to play as an instant.  
+action   | kanomath.player:268 | Playing Aether Spindle from banish as an instant.  
+INFO     | kanomath.cards.card:225 | Aether Spindle is dealing 4 damage.  
+decision | kanomath.player:211 | Opt saw 4 cards. Put [Kindle, Gaze the Ages] to top and [Overflow the Aetherwell, Destructive Aethertide] to bottom.  
+action   | kanomath.player:230 | Player activated kano, seeing Kindle and bricking.  
+
+Correct line
+- Play spindle
+- opt recognises that there is pitch for another kano
+    - put gaze to top, then kindle

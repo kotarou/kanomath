@@ -3,6 +3,8 @@ from colored import Fore, Style
 
 from typing import TYPE_CHECKING, override
 
+from loguru import logger
+
 from kanomath.zones import Zone
 if TYPE_CHECKING:
     from kanomath.player import Player
@@ -103,6 +105,8 @@ class Card:
         # What the player plans to do with this card, this turn cycle
         self.intent: str        = ""
 
+        self.arcane_dealt       = 0
+
     def __str__(self):
 
         str = print_colour(self.colour) + self.card_name
@@ -123,6 +127,10 @@ class Card:
     def pitch(self) -> int:
         return Card.determine_pitch(self.colour)
     
+    @property
+    def deals_arcane(self) -> bool:
+        return False
+
     def on_play(self):
         Zone.move_card_to_zone(self, self.resolve_to_zone)
         pass
@@ -139,7 +147,6 @@ class Card:
             Zone.move_card_to_zone(self, self.resolve_to_zone, "bottom")
         else:
             Zone.move_card_to_zone(self, self.resolve_to_zone)
-
 
     def on_pitch(self) -> int:
         Zone.move_card_to_zone(self, "pitch")
@@ -201,6 +208,11 @@ class WizardNAA(Card):
 
 class WizardSpell(WizardNAA):
 
+    arcane: int
+
+    def __init__(self, owner, zone, *args, **kwargs):
+        WizardNAA.__init__(self, owner, zone, *args, **kwargs)
+
     # Blazing Aether, Chain Lightning, etc, will need to override this
     @property
     def deals_arcane(self) -> bool:
@@ -210,5 +222,8 @@ class WizardSpell(WizardNAA):
         pass
 
     def on_play(self):
-        # TODO: deal arcane damage
-        pass
+        logger.info(f"{self} is dealing {self.arcane} damage.")
+        self.arcane_dealt = self.arcane
+        
+
+

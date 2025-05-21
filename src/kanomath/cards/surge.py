@@ -20,8 +20,7 @@ class SurgeNAA(WizardSpell):
             self.on_surge()
 
     def test_surge(self):
-        # return self.damage_dealt > self.arcane
-        pass
+        return self.damage_dealt > self.arcane
 
     def on_surge(self):
         pass

@@ -448,6 +448,9 @@ class Braino:
 
         card_is_brick   = card.card_type != "action"
 
+        if card.card_name == "Aether Wildfire" and self.player.is_player_turn:
+            return "wait"
+
         if card_is_brick:
             return "brick"
 
