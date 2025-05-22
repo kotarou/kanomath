@@ -70,7 +70,7 @@ class Kindle(WizardInstant):
         self.controller.register_amp(1,"Kindle")
 
         if self.controller.hand.size == 0:
-            self.controller.draw(1) 
+            self.controller.draw_card(1) 
         else:
             logger.debug("Kindle was played without being able to draw")
             # raise Exception("You idiot you played a kindle without being able to draw")

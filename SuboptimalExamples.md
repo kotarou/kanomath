@@ -75,3 +75,15 @@ Correct line
 - Play spindle
 - opt recognises that there is pitch for another kano
     - put gaze to top, then kindle
+
+----
+
+INFO     | kanomath.player:507 | Player hand: [4 cards: Overflow the Aetherwell [pitch], Prognosticate [pitch], Lesson in Lava [play], Blazing Aether [arsenal]], arsenal: [size 0, cards: none], arena: [size 0, cards: none].  
+action   | kanomath.player:276 | Playing Lesson in Lava [play] from hand as an action.  
+INFO     | kanomath.cards.card:225 | Lesson in Lava [play] is dealing 3 damage.  
+action   | kanomath.cards.onhits:71 | Lesson in Lava found Aether Wildfire and put it to top of deck.  
+action   | kanomath.player:244 | Player activated kano, seeing Aether Wildfire and waiting to draw it next turn.  
+
+Correct line
+- Blind kano for potion first
+- Then play lesson

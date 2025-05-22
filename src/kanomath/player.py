@@ -1,5 +1,5 @@
 from loguru import logger
-from kanomath.braino import Braino
+from kanomath.braino import Braino, StateData
 from kanomath.cards.card import COMBO_CORE, COMBO_EXTENDERS, Card
 from kanomath.cards.potions import POTIONS
 import typing
@@ -68,17 +68,13 @@ class Player:
         self.deck = zone.Deck(self)
 
         self.braino = Braino(self)
-
+        
     @property
-    def potential_chest_pitch(self) -> int:
-        if self.braino.use_tunic:
-            return 1 if self.tunic_counters == 3 and not self.chestpiece_activated else 0
-        elif self.braino.use_spellfire:
-            return 1 if not self.chestpiece_activated else 0
-        else:
-            return 0
+    def statedata(self) -> StateData:
+        return self.braino.statedata
     
     def get_zone_by_name(self, zone_name: str) -> zone.Zone:
+        """ Returns a zone within the player"""
 
         match zone_name:
             case "hand":
@@ -148,45 +144,33 @@ class Player:
         
         raise Exception(f"Attempting to find combo piece ({card_name}) when it is not present.")
 
+    # def get_pitch_intent(self) -> int:
+    #     return reduce(lambda result, card: result + card.pitch, self.get_cards_by_intent("pitch"), 0) 
 
-    def get_pitch_intent(self) -> int:
-        return reduce(lambda result, card: result + card.pitch, self.get_cards_by_intent("pitch"), 0) 
+    # def access_to_card_name(self, card_name: str, allow_banish: bool = True) -> bool:
+    #     return self.hand.contains_card_name(card_name) or self.arsenal.contains_card_name(card_name) or (allow_banish and self.banish.contains_card_name(card_name))
 
-    def access_to_card_name(self, card_name: str, allow_banish: bool = True) -> bool:
-        return self.hand.contains_card_name(card_name) or self.arsenal.contains_card_name(card_name) or (allow_banish and self.banish.contains_card_name(card_name))
-
-    def count_combo_access_card(self, card_name: str, allow_banish: bool = True) -> int:
-        return self.hand.count_cards_name(card_name) + self.arsenal.count_cards_name(card_name) + (allow_banish and self.banish.count_cards_name(card_name) if allow_banish else 0)
-
-    def make_token(self, token_name):
-        pass
-
-    def draw(self, draw_num: int = 1):
-
-        if draw_num < 1:
-            raise ValueError(f"Cannot draw fewer than 1 cards ({draw_num}).")
-        
-        self.deck.draw(draw_num)
+    # def count_combo_access_card(self, card_name: str, allow_banish: bool = True) -> int:
+    #     return self.hand.count_cards_name(card_name) + self.arsenal.count_cards_name(card_name) + (allow_banish and self.banish.count_cards_name(card_name) if allow_banish else 0)
 
     def register_amp_next(self, amp_num: int, source: str):
 
         if(amp_num < 0):
-            raise Exception(f"Cannot amp next spell less than 0 ({amp_num}).")
+            raise ValueError(f"Cannot amp next spell less than 0 ({amp_num}).")
 
         self._amp_next += 1
     
     def register_wildfire_amp(self, amp_num: int):
 
         if(amp_num < 0):
-            raise Exception(f"Cannot amp next spell less than 0 ({amp_num}).")
+            raise ValueError(f"Cannot amp next spell less than 0 ({amp_num}).")
 
         self._amp_wildfire += 1
-
 
     def register_amp(self, amp_num: int, source: str):
         
         if(amp_num < 0):
-            raise Exception(f"Cannot amp less than 0 ({amp_num}).")
+            raise ValueError(f"Cannot amp less than 0 ({amp_num}).")
         
         self._amp += 1
 
@@ -218,6 +202,8 @@ class Player:
         
         logger.decision(f"Opt saw {len(opt_top) + len(opt_bot)} cards. Put {opt_top} to top and {opt_bot} to bottom.")
 
+    def make_token(self, token_name):
+        pass
 
     def kano(self):
 
@@ -265,42 +251,6 @@ class Player:
 
         else:
             raise Exception(f"Attempted to resolve a kano with an illegal outcome ({action}).")
-
-    def play_card(self, card: Card, as_instant = False):
-
-        # TODO: card controller & owner
-        # For now not particularly considered, nor fully implemented
-        # if card.controller != self.id:
-        #     raise Exception("Attempting to play a card we do not control ({card.controller} != {self.id})")
-
-        logger.action(f"Playing {card} from {card.zone} as an {'action' if card.card_type == "action" and not as_instant else 'instant'}.")
-
-        if card.card_type == "action" and not as_instant:
-            if self.action_points == 0 or self.is_player_turn == False:
-                raise Exception(f"Attempting to play an action when disallowed (Player turn: {self.is_player_turn}, AP: {self.action_points}, as_instant: {as_instant}).")
-            else:
-                self.action_points -= 1
-
-        # TODO: assess nodes and crucible activations
-
-        if self.pitch_floating < card.cost:
-            self.pitch_best_cards(card.cost -self.pitch_floating )
-
-        if self.pitch_floating >= card.cost:
-            self.spend_pitch(card.cost, card.card_name)
-            card.on_play()
-
-            if card.card_class == "wizard" and card.card_type == "action":
-                self.wizard_naa_played += 1
-
-            if card.deals_arcane and card.arcane_dealt:
-                card.on_damage(card.arcane_dealt)
-
-
-        else:
-            # TODO: pitch to play the
-            logger.warning(f"Cannot afford {card}, cost ({card.cost}), with {self.pitch_floating} resources floating.")
-            # raise Exception(f"Cannot afford {card}, cost ({card.cost}), with {self.pitch_floating} resources floating.")
 
 
 
@@ -355,6 +305,188 @@ class Player:
             for card in pitch_cards:
                 self.pitch_card(card)
 
+    def activate_crucible(self):
+        
+        if self.pitch_floating < 1:
+            raise Exception(f"Attempting to use crucible with only {self.pitch_floating} resources available (need 1).")
+
+        if self.crucible_used:
+            raise Exception(f"Attempting to use crucible a second time in one turn.")
+
+        self.register_amp_next(1, "crucible")
+        self.crucible_used = True
+
+
+    def prepare_turn(self, game_first_turn = False):
+
+        self.is_player_turn     = not self.is_player_turn
+        
+        if self.is_player_turn:
+            self.action_points  = 1
+
+        self.crucible_used      = False
+        self.wizard_naa_played  = 0
+
+        self._arcane_dealt      = 0
+        self._amp_wildfire      = 0
+        self._amp_next          = 0
+        self._amp               = 0
+
+        self.braino.evaluate_state()
+
+        if game_first_turn or not self.is_player_turn:
+            self.braino.cycle_make_initial_decisions()
+        
+        self.braino.evaluate_state2()
+
+        logger.info(f"Player hand: {self.hand}, arsenal: {self.arsenal}, arena: {self.arena}.")
+
+
+    def play_opponent_turn(self, game_first_turn = False):
+        """ Once in this method, all preperation for the turn is complete. We simply need to execute the turn: no decisions should be made. """
+       
+        if self.statedata.kano_opp_turn:
+            self.pitch_best_cards(3)
+            self.kano()
+       
+       
+        # opp_turn_pitch      = self.braino.decide_pitch_opp_turn()
+        # num_kanos_aim       = opp_turn_pitch // 3
+        # num_kanos_completed = 0
+        
+        # pitch_cards = self.get_cards_by_intent("pitch")
+        # pitch_cards.sort(key = lambda x : x.pitch, reverse=True)
+
+        # logger.decision(f"Aiming to kano up to {num_kanos_aim} times in opponent's turn using {opp_turn_pitch} pitch.")
+
+        # should_continue = num_kanos_aim > 0
+
+
+        # while(should_continue):
+            
+        #     self.pitch_best_cards(3)
+
+        #     # If we can't afford to kano any more (chances are we played a spindle in their turn), then stop
+        #     if self.pitch_floating < 3:
+        #         break
+            
+        #     # TODO: assess maybe comboing based on the kano result
+        #     self.kano()
+        #     num_kanos_completed += 1
+
+        #     # Continue only if 1) we didn;t run out of pitch, and 2) we haven't kano'd as many times as we'd like
+        #     if should_continue:
+        #         should_continue = num_kanos_completed < num_kanos_aim
+
+
+    def play_own_turn(self, game_first_turn = False):
+
+        # Pitch all cards to begin our turn. 
+        # This works out in theory, because theres no method by which any comboination of cards can't be cleared by kanoing
+        #   or pitching to crucible in both turns
+        for card in self.get_cards_by_intent("pitch"):
+            self.pitch_card(card)
+
+        action_card = self.get_card_by_intent("play")
+
+        # Some actions - e.g., gaze the ages - want a card to be played first
+        # Others don't care about the card being played, they simply need information
+        if self.statedata.kano_before_action:
+            self.kano()
+
+        if action_card is not None:
+            # TODO: make crucible decision here
+            self.play_card(action_card)
+
+        if self.statedata.kano_after_action:
+
+            while self.pitch_floating >=3:
+                self.kano()
+
+        # potential_action_cards  = self.get_cards_by_intent("play")
+    
+        # # Play out any actions we can
+        # if len (potential_action_cards):
+        #     # Very simple trick to ignore the issue of wanting to play more than one card: just hold the others
+        #     for potential_action in potential_action_cards[1:]:
+        #         logger.decision(f"Player has too many ({len(potential_action_cards)}) actions to take. Switching intent for {potential_action_cards[1:]} to hold.")
+        #         potential_action.intent = "hold"
+
+        #     potential_card = potential_action_cards[0]
+
+        #     if self.pitch_floating < potential_card.cost:
+        #         if potential_card.zone == "hand":
+        #             # We can't actually pay for the card, so switch it to a pitch card
+        #             logger.warning(f"Player wants to play {potential_card} from hand, but cannot afford it. Pitching it instead.")
+        #             potential_card.intent = "pitch"
+        #             self.pitch_card(potential_card)
+        #         else:
+        #             logger.error(f"Player wants to play {potential_card} from arsenal, but cannot afford it. Waiting for next turn.")
+        #             # Fuck, we're stuck with it turn turn
+        #             pass
+        #     else:
+
+        #         should_crucible = self.braino.decide_turn_crucible(potential_card)
+        #         if should_crucible:
+        #             self.activate_crucible()
+                
+        #         self.play_card(potential_card)
+
+        # while self.pitch_floating >= 3:
+        #     self.kano()
+        
+        
+        # potential_arsenal_cards = self.get_cards_by_intent("arsenal")
+        # if len (potential_arsenal_cards) > 1:
+        #     raise Exception(f"Player has indicated more than one card to put in arsenal: {potential_arsenal_cards}.")
+        
+        # elif len (potential_arsenal_cards) == 1:
+        #     self.arsenal_card(potential_arsenal_cards[0])
+            
+
+
+
+    def end_turn(self, game_first_turn = False):
+
+        # EoT tokens trigger here
+        #
+
+        # Arsenal a card
+        if self.is_player_turn:
+            potential_arsenal_cards = self.get_cards_by_intent("arsenal")
+            if len (potential_arsenal_cards) > 1:
+                raise Exception(f"Player has indicated more than one card to put in arsenal: {potential_arsenal_cards}.")
+        
+            elif len (potential_arsenal_cards) == 1:
+                self.arsenal_card(potential_arsenal_cards[0])
+
+        # Move cards in pitch to bottom of deck
+        for idx in reversed(range(self.pitch.size)):
+            card = self.pitch.cards[idx]
+
+            zone.Zone.move_card_to_zone(card, "deck", "bottom")
+            card.on_turn_end()
+        
+        # Move cards in banish to exile, so we can ignore them
+        for idx in reversed(range(self.banish.size)):
+            card = self.banish.cards[idx]
+
+            zone.Zone.move_card_to_zone(card, "exile")
+            card.on_turn_end()
+
+        # Untapping happens here, if that should ever be relevant
+        ##
+
+        # Clear turn variables
+        self.action_points      = 0        
+        self.pitch_floating     = 0
+        
+        # Draw up
+        if self.is_player_turn or game_first_turn:
+            self.hand.draw_up()
+
+
+
     def arsenal_card(self, card: Card):
 
         if self.arsenal.size > 0:
@@ -370,162 +502,46 @@ class Player:
 
         # print(f"  Pitching {card}. {{r}} {self.pitch_floating} -> {self.pitch_floating + card.pitch}. Hand: {self.hand.size - 1} left.")
         card.on_pitch()
-
-
-    def play_opponent_turn(self, game_first_turn = False):
-
-        # TODO: special handling of first turn opts & etc
-        self.prepare_turn()
-
-        opp_turn_pitch      = self.braino.decide_pitch_opp_turn()
-        num_kanos_aim       = opp_turn_pitch // 3
-        num_kanos_completed = 0
-        
-        pitch_cards = self.get_cards_by_intent("pitch")
-        pitch_cards.sort(key = lambda x : x.pitch, reverse=True)
-
-        logger.decision(f"Aiming to kano up to {num_kanos_aim} times in opponent's turn using {opp_turn_pitch} pitch.")
-
-        should_continue = num_kanos_aim > 0
-
-
-        while(should_continue):
-            
-            self.pitch_best_cards(3)
-
-            # If we can't afford to kano any more (chanes are we played a spindle in their turn), then stop
-            if self.pitch_floating < 3:
-                break
-            
-            # TODO: assess maybe comboing based on the kano result
-            self.kano()
-            num_kanos_completed += 1
-
-            # Continue only if 1) we didn;t run out of pitch, and 2) we haven't kano'd as many times as we'd like
-            if should_continue:
-                should_continue = num_kanos_completed < num_kanos_aim
-
-
-
-
-        if game_first_turn:
-            # print("  Player drew up for end of first turn.")
-            self.hand.draw_up()
-
-        self.pitch_floating     = 0
-
-    def play_own_turn(self, game_first_turn = False):
-
-        self.prepare_turn(game_first_turn)
-
-        # TODO: Don't cheat by pitching all cards at the beginning
-        # This is a pretty minor assumption though, as there is no combination of pitch cards that can't be cleared by correct pitching to kano and crible in a turn cycle
-        # Pearl cards are a different story, of course.
-        potential_pitch_cards   = self.get_cards_by_intent("pitch")
-        potential_pitch_cards.sort(key=lambda x: x.pitch)
-
-        # Reverse to iterate nice
-        for card in potential_pitch_cards:
-            self.pitch_card(card)
-        
-        potential_action_cards  = self.get_cards_by_intent("play")
     
-        # Play out any actions we can
-        if len (potential_action_cards):
-            # Very simple trick to ignore the issue of wanting to play more than one card: just hold the others
-            for potential_action in potential_action_cards[1:]:
-                logger.decision(f"Player has too many ({len(potential_action_cards)}) actions to take. Switching intent for {potential_action_cards[1:]} to hold.")
-                potential_action.intent = "hold"
+    def play_card(self, card: Card, as_instant = False):
 
-            potential_card = potential_action_cards[0]
+        # TODO: card controller & owner
+        # For now not particularly considered, nor fully implemented
+        # if card.controller != self.id:
+        #     raise Exception("Attempting to play a card we do not control ({card.controller} != {self.id})")
 
-            if self.pitch_floating < potential_card.cost:
-                if potential_card.zone == "hand":
-                    # We can't actually pay for the card, so switch it to a pitch card
-                    logger.warning(f"Player wants to play {potential_card} from hand, but cannot afford it. Pitching it instead.")
-                    potential_card.intent = "pitch"
-                    self.pitch_card(potential_card)
-                else:
-                    logger.error(f"Player wants to play {potential_card} from arsenal, but cannot afford it. Waiting for next turn.")
-                    # Fuck, we're stuck with it turn turn
-                    pass
+        logger.action(f"Playing {card} from {card.zone} as an {'action' if card.card_type == "action" and not as_instant else 'instant'}.")
+
+        if card.card_type == "action" and not as_instant:
+            if self.action_points == 0 or self.is_player_turn == False:
+                raise Exception(f"Attempting to play an action when disallowed (Player turn: {self.is_player_turn}, AP: {self.action_points}, as_instant: {as_instant}).")
             else:
+                self.action_points -= 1
 
-                should_crucible = self.braino.decide_turn_crucible(potential_card)
-                if should_crucible:
-                    self.activate_crucible()
-                
-                self.play_card(potential_card)
+        # TODO: assess nodes and crucible activations
 
-        while self.pitch_floating >= 3:
-            self.kano()
-        
-        
-        potential_arsenal_cards = self.get_cards_by_intent("arsenal")
-        if len (potential_arsenal_cards) > 1:
-            raise Exception(f"Player has indicated more than one card to put in arsenal: {potential_arsenal_cards}.")
-        
-        elif len (potential_arsenal_cards) == 1:
-            self.arsenal_card(potential_arsenal_cards[0])
-            
-        # logger.info(f"Player drew {self.current_intellect - self.hand.size} cards for end of their turn.")
-        
-        self.end_turn()
+        if self.pitch_floating < card.cost:
+            self.pitch_best_cards(card.cost -self.pitch_floating )
 
-    def activate_crucible(self):
-        
-        if self.pitch_floating < 1:
-            raise Exception(f"Attempting to use crucible with only {self.pitch_floating} resources available (need 1).")
+        if self.pitch_floating >= card.cost:
+            self.spend_pitch(card.cost, card.card_name)
+            card.on_play()
 
-        if self.crucible_used:
-            raise Exception(f"Attempting to use crucible a second time in one turn.")
+            if card.card_class == "wizard" and card.card_type == "action":
+                self.wizard_naa_played += 1
 
-        self.register_amp_next(1, "crucible")
-        self.crucible_used = True
+            if card.deals_arcane and card.arcane_dealt:
+                card.on_damage(card.arcane_dealt)
 
 
-    def prepare_turn(self, game_first_turn = False):
-
-        self.is_player_turn = not self.is_player_turn
-        
-        if self.is_player_turn:
-            self.action_points  = 1
-        #     logger.system(f"Beginning player{'\'s first' if game_first_turn else ''} turn")
-        # else:
-        #     logger.system(f"Beginning opponent{'\'s first' if game_first_turn else ''} turn")
-
-        self.crucible_used      = False
-        self.wizard_naa_played  = 0
-        self._arcane_dealt      = 0
-
+        else:
+            # TODO: pitch to play the
+            logger.warning(f"Cannot afford {card}, cost ({card.cost}), with {self.pitch_floating} resources floating.")
+            # raise Exception(f"Cannot afford {card}, cost ({card.cost}), with {self.pitch_floating} resources floating.")
     
-        self.braino.evaluate_state()
+    def draw_card(self, draw_num: int = 1):
 
-        if game_first_turn or not self.is_player_turn:
-            self.braino.cycle_make_initial_decisions()
-
-        logger.info(f"Player hand: {self.hand}, arsenal: {self.arsenal}, arena: {self.arena}.")
-
-    def end_turn(self):
-
-        # First, clean up pitch & banish
-        for idx in reversed(range(self.pitch.size)):
-            card = self.pitch.cards[idx]
-
-            zone.Zone.move_card_to_zone(card, "deck", "bottom")
-            card.on_turn_end()
+        if draw_num < 1:
+            raise ValueError(f"Cannot draw fewer than 1 cards ({draw_num}).")
         
-        for idx in reversed(range(self.banish.size)):
-            card = self.banish.cards[idx]
-
-            zone.Zone.move_card_to_zone(card, "exile")
-            card.on_turn_end()
-
-
-        if self.is_player_turn:
-            self.hand.draw_up()
-
-        self.action_points      = 0        
-        self.pitch_floating     = 0
-        
-
+        self.deck.draw(draw_num)

@@ -82,7 +82,7 @@ class FloodGates(SurgeNAA, CardCyle):
         self.colour = Card.format_colour_string(colour)
 
     def on_surge(self):
-        self.controller.draw(2)
+        self.controller.draw_card(2)
 
 class AetherQuickening(SurgeNAA, ScaldingRain):
 

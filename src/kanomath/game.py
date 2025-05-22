@@ -132,9 +132,6 @@ class Game:
         logger.system(f"Game reached endstate {self.player.braino.state} on turn {self.player_num_turns}, with {self.player.deck.size} cards left in deck.")
 
 
-            
-            
-
 
         # Begin with the first turn, which is slightly unusual
 
@@ -143,9 +140,6 @@ class Game:
         # logger.info("Running first turn.")
 
         if turn_player.id == "player":
-
-            # self.player.braino.evaluate_state()
-            # self.player.braino.cycle_make_initial_decisions()
 
             self.run_player_turn(True)
             # TODO: Opponent draw up
@@ -157,38 +151,17 @@ class Game:
 
     def run_opponent_turn(self, game_first_turn):
 
-        # logger.info("-----")
-        # logger.info(f"Running opponent turn. Hand: {self.player.hand}, Arsenal: {self.player.arsenal} ")
-
-        # self.player.braino.evaluate_state()
-        # self.player.braino.cycle_make_initial_decisions()
-        
+        self.player.prepare_turn(game_first_turn)
         self.player.play_opponent_turn(game_first_turn)
-        # self.cleanup_turn()
-
-    
+        self.player.end_turn()
+        
     def run_player_turn(self, game_first_turn: bool = False):
-
-        # logger.info(f"Running player turn. Hand: {self.player.hand}. Arsenal: {self.player.arsenal}. Arena: {self.player.arena}")
 
         self.player_num_turns += 1
 
-        # self.player.braino.evaluate_state()
+        self.player.prepare_turn(game_first_turn)
         self.player.play_own_turn(game_first_turn)
-        
-    #     self.cleanup_turn()
+        self.player.end_turn()
 
-
-
-    # def cleanup_turn(self):        
-        
-    #     # At the end, clean up the player's banish
-    #     # TODO: This should be a method on player, seeing as it assumes the same owner and all
-    #     # move_cards_between_zones(self.player, "banish", "exile")
-
-    #     for idx in reversed(range(self.player.banish.size)):
-    #         card = self.player.banish.cards[idx]
-
-    #         Zone.move_card_to_zone(card, "exile")
 
         
