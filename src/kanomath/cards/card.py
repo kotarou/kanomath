@@ -131,10 +131,6 @@ class Card:
     def deals_arcane(self) -> bool:
         return False
 
-    def on_play(self):
-        Zone.move_card_to_zone(self, self.resolve_to_zone)
-        pass
-
     def on_resolve(self):
         ''' 
         Once we have finished playing a card, control what hapens to it.
@@ -147,6 +143,9 @@ class Card:
             Zone.move_card_to_zone(self, self.resolve_to_zone, "bottom")
         else:
             Zone.move_card_to_zone(self, self.resolve_to_zone)
+
+    def on_play(self):
+        pass
 
     def on_pitch(self) -> int:
         Zone.move_card_to_zone(self, "pitch")
@@ -226,6 +225,5 @@ class WizardSpell(WizardNAA):
         self.arcane_dealt = self.arcane
         self.controller.register_arcane_damage(self.arcane, self.card_name)
         
-        WizardNAA.on_play(self)
 
 

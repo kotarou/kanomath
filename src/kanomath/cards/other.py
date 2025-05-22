@@ -37,10 +37,8 @@ class GazeTheAges(WizardNAA):
 
     def on_play(self):
         self.controller.opt(2)
+        self.resolve_to_zone = "hand"
 
-        if self.controller.wizard_naa_played > 0:
-            self.resolve_to_zone = "hand"
-    
     def on_turn_end(self):
         
         if self.resolve_to_zone == "hand":

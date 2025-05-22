@@ -5,6 +5,7 @@ from kanomath.cards import Card
 from kanomath.cards.card import COMBO_CORE, COMBO_EXTENDERS
 from kanomath.cards.potions import POTIONS
 from kanomath.functions import card_is_blue, match_card_name, remove_all_matching, remove_first_matching
+from enum import Enum
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -20,6 +21,14 @@ combo_core_pieces   = ["Kindle", "Aether Wildfire", "Lesson in Lava", "Blazing A
 
 combo_draw_2        = ["Open the Flood Gates", "Tome of Aetherwind", "Tome of Fyendal"]
 combo_draw_1        = []
+
+class KRESULT(Enum):
+    BRICK   = "brick"
+    WAIT    = "wait"
+    BANISH  = "banish"
+    PLAY    = "play"
+
+
 
 class Braino:
 
@@ -92,10 +101,10 @@ class Braino:
 
         self.combo_lesson_find_blazing = self.has_wf and self.has_lesson and not self.has_blazing
 
-        self.combo_ready                = self.has_wf and self.pitch_ready and (self.combo_has_lesson or self.combo_has_blazing)
+        self.combo_ready                = self.has_wf and self.pitch_ready and (self.has_lesson or self.has_blazing)
         self.combo_ready_if_wf          = self.has_blazing and self.pitch_ready and not self.has_wf
-        self.combo_ready_if_lesson      = self.has_wf and self.pitch_ready and not (self.combo_has_lesson or self.combo_has_blazing)
-        self.combo_ready_if_blazing     = self.has_wf and self.pitch_ready and not (self.combo_has_lesson or self.combo_has_blazing)
+        self.combo_ready_if_lesson      = self.has_wf and self.pitch_ready and not (self.has_lesson or self.has_blazing)
+        self.combo_ready_if_blazing     = self.has_wf and self.pitch_ready and not (self.has_lesson or self.has_blazing)
         self.combo_ready_if_pitch       = self.has_blazing and (self.has_lesson or self.has_blazing) and not self.pitch_ready
 
         if self.combo_ready:
@@ -251,7 +260,7 @@ class Braino:
                 self.statedata.play_before_action   = True 
                 self.statedata.kano_after_action    = True  # Gaze is a special case, because we want its modes active, and also will pitch it after
 
-        logger.info(f"At the begining of cycle, player state is {self.state}.")
+        # logger.info(f"At the begining of cycle, player state is {self.state}.")
 
   
 
@@ -461,33 +470,59 @@ class Braino:
         return max(free_pitch - pitch_next_turn, 0)
 
     # Decide what action should be taken with a topdeck card
-    def decide_kano_result(self, card: Card):
+    def decide_kano_result(self, card: Card) -> KRESULT:
 
         card_is_brick   = card.card_type != "action"
-
-        if card.card_name == "Aether Wildfire" and self.player.is_player_turn:
-            return "wait"
+        card_num_deck   = self.player.deck.count_cards_name(card.card_name)
 
         if card_is_brick:
-            return "brick"
+            return KRESULT.BRICK
 
-        card_is_potion  = card.card_name in POTIONS
-        card_is_setup   = card.card_name in ["Gaze the Ages", "Aether Spindle"]
-        card_is_combo   = card.card_name in COMBO_CORE
-        card_is_extender= card.card_name in COMBO_EXTENDERS
-        
         if self.state == "setup":
 
-            if card_is_potion or card_is_setup:
-                return "play"
+            if card.card_name == "Aether Wildfire":
+                
+                if self.player.is_player_turn and not self.has_wf:
+                    return KRESULT.WAIT
+                
+                if not self.player.is_player_turn:
+                    # TODO: assess conditions for just going off
+                    pass    
+                
+                return KRESULT.WAIT
+
+            if card.card_name == "Blazing Aether":
+                
+                if not (self.has_blazing or self.has_lesson) and self.has_wf:
+                    return KRESULT.WAIT
             
-            if (card_is_combo or card_is_extender) and self.has_wf and not self.player.is_player_turn:
-                return "assess_combo"
+                if self.player.arcane_damage_dealt > 2 and card_num_deck > 2:
+                    return KRESULT.PLAY
+                
+                return KRESULT.WAIT
+
+            if card.card_name in POTIONS:
+                return KRESULT.PLAY
+            
+            if card.card_name == "Aether Spindle":
+                return KRESULT.PLAY     
+
+            if card.card_name == "Aether Flare":
+                return KRESULT.PLAY     
+            
+            if card.card_name == "Gaze The Ages":
+
+                if self.player.wizard_naa_played:
+                    return KRESULT.PLAY
+                    
+                return KRESULT.BANISH     
+            
+            return KRESULT.BANISH 
         
         if self.state == "topdeck_combo" or self.state == "combo":
-            return "play"
+            return KRESULT.PLAY
         
-        return "banish"
+        return KRESULT.BANISH
     
     def decide_turn_crucible(self, card: Card):
 

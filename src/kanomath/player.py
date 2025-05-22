@@ -1,5 +1,5 @@
 from loguru import logger
-from kanomath.braino import Braino, StateData
+from kanomath.braino import KRESULT, Braino, StateData
 from kanomath.cards.card import COMBO_CORE, COMBO_EXTENDERS, Card
 from kanomath.cards.potions import POTIONS
 import typing
@@ -220,13 +220,13 @@ class Player:
         card    = typing.cast(Card, self.deck.peek())
         action  = self.braino.decide_kano_result(card)
 
-        if action == "brick":
+        if action == KRESULT.BRICK:
             logger.action(f"Player activated kano, seeing {card} and bricking.")
             # We could set num_kanos to 0 here to stop kanoing
             # But contonueing to kano into bricks allows for more hand cycling
             return
         
-        if action == "wait":
+        if action == KRESULT.WAIT:
             logger.action(f"Player activated kano, seeing {card} and waiting to draw it next turn.")
             # We could set num_kanos to 0 here to stop kanoing
             # But contonueing to kano into bricks allows for more hand cycling
@@ -239,11 +239,11 @@ class Player:
             # For now, assume seeing a combo piece in this situation is just a brick
             return
     
-        elif action == "banish":
+        elif action == KRESULT.BANISH:
             logger.action(f"Player activated kano, seeing {card}. Banishing it to thin deck.")
             card.move_to_zone("banish")
 
-        elif action == "play":
+        elif action == KRESULT.PLAY:
             logger.action(f"Player activated kano, seeing {card}. Banishing it to play as an instant.")
             card.move_to_zone("banish")
 
@@ -348,35 +348,8 @@ class Player:
         if self.statedata.kano_opp_turn:
             self.pitch_best_cards(3)
             self.kano()
-       
-       
-        # opp_turn_pitch      = self.braino.decide_pitch_opp_turn()
-        # num_kanos_aim       = opp_turn_pitch // 3
-        # num_kanos_completed = 0
         
-        # pitch_cards = self.get_cards_by_intent("pitch")
-        # pitch_cards.sort(key = lambda x : x.pitch, reverse=True)
-
-        # logger.decision(f"Aiming to kano up to {num_kanos_aim} times in opponent's turn using {opp_turn_pitch} pitch.")
-
-        # should_continue = num_kanos_aim > 0
-
-
-        # while(should_continue):
-            
-        #     self.pitch_best_cards(3)
-
-        #     # If we can't afford to kano any more (chances are we played a spindle in their turn), then stop
-        #     if self.pitch_floating < 3:
-        #         break
-            
-        #     # TODO: assess maybe comboing based on the kano result
-        #     self.kano()
-        #     num_kanos_completed += 1
-
-        #     # Continue only if 1) we didn;t run out of pitch, and 2) we haven't kano'd as many times as we'd like
-        #     if should_continue:
-        #         should_continue = num_kanos_completed < num_kanos_aim
+        self.play_out_banish()
 
 
     def play_own_turn(self, game_first_turn = False):
@@ -403,46 +376,20 @@ class Player:
             while self.pitch_floating >=3:
                 self.kano()
 
-        # potential_action_cards  = self.get_cards_by_intent("play")
-    
-        # # Play out any actions we can
-        # if len (potential_action_cards):
-        #     # Very simple trick to ignore the issue of wanting to play more than one card: just hold the others
-        #     for potential_action in potential_action_cards[1:]:
-        #         logger.decision(f"Player has too many ({len(potential_action_cards)}) actions to take. Switching intent for {potential_action_cards[1:]} to hold.")
-        #         potential_action.intent = "hold"
+        self.play_out_banish()
 
-        #     potential_card = potential_action_cards[0]
+        # Clean up any remaining pitch
+        while self.pitch_floating >=3:
+            self.kano()
 
-        #     if self.pitch_floating < potential_card.cost:
-        #         if potential_card.zone == "hand":
-        #             # We can't actually pay for the card, so switch it to a pitch card
-        #             logger.warning(f"Player wants to play {potential_card} from hand, but cannot afford it. Pitching it instead.")
-        #             potential_card.intent = "pitch"
-        #             self.pitch_card(potential_card)
-        #         else:
-        #             logger.error(f"Player wants to play {potential_card} from arsenal, but cannot afford it. Waiting for next turn.")
-        #             # Fuck, we're stuck with it turn turn
-        #             pass
-        #     else:
 
-        #         should_crucible = self.braino.decide_turn_crucible(potential_card)
-        #         if should_crucible:
-        #             self.activate_crucible()
-                
-        #         self.play_card(potential_card)
+    def play_out_banish(self) -> None:
 
-        # while self.pitch_floating >= 3:
-        #     self.kano()
-        
-        
-        # potential_arsenal_cards = self.get_cards_by_intent("arsenal")
-        # if len (potential_arsenal_cards) > 1:
-        #     raise Exception(f"Player has indicated more than one card to put in arsenal: {potential_arsenal_cards}.")
-        
-        # elif len (potential_arsenal_cards) == 1:
-        #     self.arsenal_card(potential_arsenal_cards[0])
-            
+        for idx in reversed(range(len((self.banish.cards)))):
+            card = self.banish.cards[idx]
+
+            if self.pitch_floating >= card.cost:
+                self.play_card(card, True)
 
 
 
@@ -525,13 +472,22 @@ class Player:
 
         if self.pitch_floating >= card.cost:
             self.spend_pitch(card.cost, card.card_name)
+            
             card.on_play()
+            card.on_resolve()
 
             if card.card_class == "wizard" and card.card_type == "action":
                 self.wizard_naa_played += 1
 
             if card.deals_arcane and card.arcane_dealt:
                 card.on_damage(card.arcane_dealt)
+
+            if card.zone == "hand":
+                # Its a gaze the ages, and has come back to hand
+                card.intent = "pitch"
+                self.pitch_card(card)
+                logger.debug("spun a gaze the ages")
+
 
 
         else:
