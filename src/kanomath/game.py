@@ -16,7 +16,7 @@ class Game:
 
     @property
     def game_should_continue(self) -> bool:
-        return self.player_num_turns < 2 and self.player.deck.size > 1
+        return self.player_num_turns < 4 and self.player.deck.size > 1
 
     def __init__(self):
         pass

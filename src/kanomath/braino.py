@@ -23,7 +23,7 @@ combo_draw_1        = []
 
 class Braino:
 
-    combo_critical_resources = 11
+    combo_critical_resources = 12
 
     def __init__(self, player: Player):
 
@@ -101,7 +101,7 @@ class Braino:
         if self.combo_ready:
             self.state = "combo"
 
-        
+        logger.debug(f"Player in state {self.state} has wf {self.has_wf}, lesson {self.has_lesson}, blazing {self.has_blazing}, pitch {self.pitch_ready} ({self.evaluate_combo_pitch("risky") if self.play_pitch_risky else self.evaluate_combo_pitch("safe")} vs {self.combo_critical_resources}).")
 
     def cycle_make_initial_decisions(self):
 
@@ -250,6 +250,8 @@ class Braino:
                 self.statedata.kano_before_action   = True 
                 self.statedata.play_before_action   = True 
                 self.statedata.kano_after_action    = True  # Gaze is a special case, because we want its modes active, and also will pitch it after
+
+        logger.info(f"At the begining of cycle, player state is {self.state}.")
 
   
 
@@ -612,7 +614,7 @@ class Braino:
                 return "Kindle"
 
         else:
-            pass
+            return "Gaze the Ages"
 
 
 class OptData:

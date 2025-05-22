@@ -391,7 +391,7 @@ class Player:
 
         # Some actions - e.g., gaze the ages - want a card to be played first
         # Others don't care about the card being played, they simply need information
-        if self.statedata.kano_before_action:
+        if self.statedata.kano_before_action and self.pitch_floating >= 3:
             self.kano()
 
         if action_card is not None:

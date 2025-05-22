@@ -225,5 +225,7 @@ class WizardSpell(WizardNAA):
         logger.info(f"{self} is dealing {self.arcane} damage.")
         self.arcane_dealt = self.arcane
         self.controller.register_arcane_damage(self.arcane, self.card_name)
+        
+        WizardNAA.on_play(self)
 
 
